@@ -1,0 +1,6 @@
+# Raw Databento downloads are never committed
+data/raw/
+*.zip
+*.dbn
+*.dbn.zst
+__pycache__/
