@@ -1,0 +1,102 @@
+# Layer 1 — data infrastructure configuration for the ICT Silver Bullet replication (MNQ).
+# Every value here is hashed into data/clean/manifest.json (config_hash). Changing any value
+# changes the hash and therefore invalidates cached outputs.
+
+[project]
+name = "ict_silver_bullet_replication_mnq"
+layer = 1
+
+[paths]            # relative to the ict_lab/ directory
+raw_dir = "data/raw"
+clean_dir = "data/clean"
+runs_dir = "runs"
+
+[instrument]
+root = "MNQ"
+exchange_dataset = "GLBX.MDP3"
+tick_size = 0.25            # index points
+tick_value = 0.50           # USD per tick per contract
+point_value = 2.0           # USD per index point per contract
+# Outright quarterly contracts only. Calendar spreads (e.g. MNQZ5-MNQH6) are excluded.
+outright_symbol_regex = "^MNQ[HMUZ][0-9]$"
+
+[session]
+timezone = "America/New_York"
+# CME equity-index Globex session: 18:00 ET previous calendar day -> 17:00 ET trading date.
+open_time = "18:00"
+close_time = "17:00"
+maintenance_start = "17:00"
+maintenance_end = "18:00"
+full_session_minutes = 1380   # 23 hours of 1-minute bars
+# Half-open windows [start, end) in exchange-local wall-clock time.
+[session.windows]
+rth = ["09:30", "16:00"]
+sb_london = ["03:00", "04:00"]
+sb_ny_am = ["10:00", "11:00"]
+sb_ny_pm = ["14:00", "15:00"]
+
+[roll]
+method = "volume_crossover"
+# Daily volume = sum of 1-minute volume per contract per CME trading date.
+# A crossover on trading date D (challenger volume > incumbent volume) takes effect on the
+# NEXT trading date D+1, so the contract used on any date is chosen with data available
+# before that session opens (no look-ahead).
+confirmation_days = 1
+# Only contracts with a later expiry code than the incumbent may become the new front.
+forward_only = true
+# Tie (equal daily volume): the incumbent stays.
+tie_break = "incumbent"
+# Reference minute for the roll offset: the bar whose NY wall-clock time is given below,
+# on the crossover date D (last full session before the roll takes effect).
+# If either contract lacks that bar, step back one minute at a time within the same
+# session until both have a bar; the roll log flags the fallback.
+reference_minute = "16:59"
+reference_price_field = "close"
+
+[adjustment]
+method = "additive_backward"
+anchor = "latest_contract"      # latest selected contract carries zero adjustment
+
+[quality]
+# Consecutive-minute price move (close[t-1] -> open[t]) flagged as an abnormal discontinuity.
+abnormal_jump_points = 150.0
+# A session is 'complete' when it has every minute from open to close (full_session_minutes).
+# A window is 'eligible' when every one of its minutes has a bar and the session is not the
+# truncated final session.
+window_eligibility = "all_minutes_present"
+
+# Anomalies identified in the Phase 1 audit. The pipeline must detect each of these and
+# fails loudly if one is not found (guards against silent data substitution).
+[[quality.known_anomalies]]
+id = "thanksgiving_2025_overnight_hole"
+gap_start_ny = "2025-11-27 21:44"   # last bar before the hole
+gap_end_ny = "2025-11-28 08:30"     # first bar after the hole
+expected_missing_minutes = 645
+vendor_flag = "degraded"
+[[quality.known_anomalies]]
+id = "2025-04-02_reopen_missing_1800_1801"
+gap_start_ny = "2025-04-02 16:59"
+gap_end_ny = "2025-04-02 18:02"
+expected_missing_minutes = 2
+vendor_flag = "none"
+[[quality.known_anomalies]]
+id = "2022-12-13_cpi_missing_0831"
+gap_start_ny = "2022-12-13 08:30"
+gap_end_ny = "2022-12-13 08:32"
+expected_missing_minutes = 1
+vendor_flag = "none"
+[[quality.known_anomalies]]
+id = "2025-04-02_missing_1631"
+gap_start_ny = "2025-04-02 16:30"
+gap_end_ny = "2025-04-02 16:32"
+expected_missing_minutes = 1
+vendor_flag = "none"
+
+[split]
+# CME trading dates (inclusive). The first session in the files opens 2022-10-02 18:00 ET,
+# which is trading date 2022-10-03.
+development_start = 2022-10-03
+development_end = 2024-10-18
+holdout_start = 2024-10-21
+holdout_end = 2026-10-20
+# Trading dates after holdout_end (the truncated 2026-10-21 session) belong to neither split.

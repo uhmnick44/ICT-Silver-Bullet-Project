@@ -1,0 +1,136 @@
+{
+  "bar_checks_unadjusted": {
+    "rows": 1434205,
+    "duplicate_timestamps": 0,
+    "non_monotonic_timestamps": 0,
+    "zero_volume_bars": 0,
+    "invalid_ohlc_bars": 0,
+    "nonpositive_price_bars": 0,
+    "off_tick_bars": 0,
+    "nan_fields": 0,
+    "minute_aligned": true
+  },
+  "bar_checks_backadjusted": {
+    "rows": 1434205,
+    "duplicate_timestamps": 0,
+    "non_monotonic_timestamps": 0,
+    "zero_volume_bars": 0,
+    "invalid_ohlc_bars": 0,
+    "nonpositive_price_bars": 0,
+    "off_tick_bars": 0,
+    "nan_fields": 0,
+    "minute_aligned": true
+  },
+  "sessions_total": 1048,
+  "sessions_complete": 1004,
+  "sessions_incomplete": 44,
+  "sessions_vendor_degraded": 11,
+  "truncated_final_session": [
+    "2026-10-21"
+  ],
+  "missing_trading_dates": [
+    "2022-12-26",
+    "2023-01-02",
+    "2023-12-25",
+    "2024-01-01",
+    "2024-03-29",
+    "2024-12-25",
+    "2025-01-01",
+    "2025-04-18",
+    "2025-12-25",
+    "2026-01-01"
+  ],
+  "total_missing_session_minutes": 12035,
+  "gaps_total": 1051,
+  "gaps_by_class": {
+    "maintenance_break": 802,
+    "exchange_closed_full_session": 215,
+    "early_close_or_late_open": 30,
+    "intra_session_gap": 4
+  },
+  "intra_session_gaps": 4,
+  "known_anomalies": [
+    {
+      "anomaly_id": "thanksgiving_2025_overnight_hole",
+      "gap_start_ny": "2025-11-27 21:44:00-05:00",
+      "gap_end_ny": "2025-11-28 08:30:00-05:00",
+      "expected_missing_minutes": 645,
+      "observed_missing_minutes": 645,
+      "vendor_flag": "degraded",
+      "detected": true,
+      "matches_expectation": true
+    },
+    {
+      "anomaly_id": "2025-04-02_reopen_missing_1800_1801",
+      "gap_start_ny": "2025-04-02 16:59:00-04:00",
+      "gap_end_ny": "2025-04-02 18:02:00-04:00",
+      "expected_missing_minutes": 2,
+      "observed_missing_minutes": 2,
+      "vendor_flag": "none",
+      "detected": true,
+      "matches_expectation": true
+    },
+    {
+      "anomaly_id": "2022-12-13_cpi_missing_0831",
+      "gap_start_ny": "2022-12-13 08:30:00-05:00",
+      "gap_end_ny": "2022-12-13 08:32:00-05:00",
+      "expected_missing_minutes": 1,
+      "observed_missing_minutes": 1,
+      "vendor_flag": "none",
+      "detected": true,
+      "matches_expectation": true
+    },
+    {
+      "anomaly_id": "2025-04-02_missing_1631",
+      "gap_start_ny": "2025-04-02 16:30:00-04:00",
+      "gap_end_ny": "2025-04-02 16:32:00-04:00",
+      "expected_missing_minutes": 1,
+      "observed_missing_minutes": 1,
+      "vendor_flag": "none",
+      "detected": true,
+      "matches_expectation": true
+    }
+  ],
+  "abnormal_discontinuities": 0,
+  "roll_dates": [
+    "2022-12-13",
+    "2023-03-14",
+    "2023-06-13",
+    "2023-09-12",
+    "2023-12-13",
+    "2024-03-12",
+    "2024-06-18",
+    "2024-09-17",
+    "2024-12-18",
+    "2025-03-19",
+    "2025-06-17",
+    "2025-09-17",
+    "2025-12-17",
+    "2026-03-18",
+    "2026-06-16",
+    "2026-09-16"
+  ],
+  "window_eligibility": {
+    "rth": {
+      "eligible_sessions": 1007,
+      "ineligible_sessions": 41
+    },
+    "sb_london": {
+      "eligible_sessions": 1046,
+      "ineligible_sessions": 2
+    },
+    "sb_ny_am": {
+      "eligible_sessions": 1044,
+      "ineligible_sessions": 4
+    },
+    "sb_ny_pm": {
+      "eligible_sessions": 1007,
+      "ineligible_sessions": 41
+    }
+  },
+  "split_session_counts": {
+    "development": 530,
+    "holdout": 517,
+    "excluded": 1
+  }
+}

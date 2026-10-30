@@ -4,3 +4,13 @@ data/raw/
 *.dbn
 *.dbn.zst
 __pycache__/
+
+# ict_lab: raw vendor data and large derived datasets are never committed
+ict_lab/data/raw/*.zip
+ict_lab/data/raw/_extracted/
+ict_lab/data/clean/*.parquet
+ict_lab/data/clean/contracts/
+ict_lab/data/clean/partitioned/
+ict_lab/runs/roll_charts/
+ict_lab/runs/pipeline_run_*.json
+.pytest_cache/
