@@ -45,7 +45,7 @@ def detect_fvg(candles: pd.DataFrame, bars_1m: pd.DataFrame, timeframe: str, cfg
     h, l = candles["high"].to_numpy(float), candles["low"].to_numpy(float)
     cons = candles["consecutive_prev"].to_numpy(bool)
     comp = candles["complete"].to_numpy(bool)
-    a = atr_fn(candles, atr_cfg.period, atr_cfg.method)
+    a = atr_fn(candles, atr_cfg.period, atr_cfg.method, atr_cfg.reset_on_data_gap)
     n = len(candles)
     if n < 3:
         return pd.DataFrame(columns=FVG_COLS)

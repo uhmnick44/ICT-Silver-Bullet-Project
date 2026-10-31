@@ -20,7 +20,7 @@ DISP_COLS = ["series_id", "timeframe", "candle_index", "ts_utc", "ts_ny", "tradi
 
 def detect_displacement(candles: pd.DataFrame, timeframe: str, cfg: DisplacementConfig, atr_cfg: ATRConfig, series_id: str,
                         keep_all: bool = False) -> pd.DataFrame:
-    a = atr_fn(candles, atr_cfg.period, atr_cfg.method)
+    a = atr_fn(candles, atr_cfg.period, atr_cfg.method, atr_cfg.reset_on_data_gap)
     ref = np.roll(a, 1) if cfg.atr_reference == "prior_candle" else a
     if cfg.atr_reference == "prior_candle":
         ref[0] = np.nan

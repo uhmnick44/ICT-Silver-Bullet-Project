@@ -10,8 +10,9 @@ Legend used throughout:
 
 - **FIXED** — methodology requirement; changing it is a different methodology.
 - **PARAM** — configurable research parameter (exposed in the TOML config and hashed into every run).
-- **ASSUMPTION** — implementation choice not determined by the specification; documented here and
-  flagged as an ambiguity in §12.
+- **APPROVED** — implementation choice not determined by the specification, approved in the Layer 2
+  ambiguity resolution (2026-10-31); documented here as an explicit, deliberate choice.
+- **ASSUMPTION** — implementation choice still awaiting a decision (listed in §12).
 - **LOOKAHEAD** — diagnostic that uses future information; isolated from strategy testing.
 
 ## 1. Data, series and causality
@@ -37,9 +38,14 @@ Legend used throughout:
 ## 2. ATR(14)
 
 - FIXED: period 14, measured on the same timeframe as the feature that uses it.
-- ASSUMPTION: Wilder smoothing (`atr.method = "wilder"`, alternative `"sma"`).
-- ASSUMPTION: true range uses the previous close only when the candle is bucket-consecutive with its
-  predecessor; across a gap or session break TR = high − low.
+- APPROVED: Wilder smoothing (`atr.method = "wilder"`, alternative `"sma"`).
+- APPROVED continuity rule: true range uses the previous close only when the candle is
+  bucket-consecutive with its predecessor; across a session break or a data hole TR = high − low.
+  A **data discontinuity** is a candle that is not bucket-consecutive with the previous candle of the
+  same session (missing-bar hole) or that is itself incomplete. With `atr.reset_on_data_gap = true`
+  (default) the recursion restarts at every discontinuity and ATR is unavailable (NaN) until 14 candles
+  have accumulated since the restart. Session breaks (maintenance, weekends) are not data holes; ATR
+  carries across them.
 - Warm-up: the first 14 candles have no ATR (NaN). Features that need ATR record NaN and any
   ATR-based filter excludes them rather than inventing a value.
 
@@ -51,13 +57,13 @@ Legend used throughout:
 | bearish | candle-1 low **strictly above** candle-3 high; upper = c1.low, lower = c3.high | FIXED |
 | timeframes | 1m, 5m, 15m | FIXED |
 | availability | only after candle 3 closes: `confirmation_ts_utc = c3.available_ts_utc` | FIXED |
-| formation_ts | candle-1 open time | ASSUMPTION |
-| candles | the three candles must be bucket-consecutive and complete (`fvg.require_complete_candles`) | ASSUMPTION/PARAM |
+| formation_ts | candle-1 open time | APPROVED |
+| candles | the three candles must be bucket-consecutive and complete (`fvg.require_complete_candles`); incomplete HTF candles never form an FVG | APPROVED/PARAM |
 | midpoint, gap_points, gap_ticks | (upper+lower)/2, upper−lower, /0.25 | FIXED |
 | gap_atr | gap_points / ATR(14) on the FVG timeframe at candle-3 close | FIXED |
 | min filters | `fvg.min_gap_points`, `fvg.min_gap_atr` (NaN ATR fails the ATR filter) | PARAM |
-| first mitigation | first 1m bar at/after confirmation that trades **strictly inside** the gap (bullish: low < upper; bearish: high > lower) | ASSUMPTION |
-| full fill | first 1m bar at/after confirmation that reaches the distal boundary (bullish: low ≤ lower; bearish: high ≥ upper) | ASSUMPTION |
+| first mitigation | first 1m bar at/after confirmation that trades **strictly inside** the gap (bullish: low < upper; bearish: high > lower) | APPROVED |
+| full fill | first 1m bar at/after confirmation that reaches the distal boundary (bullish: low ≤ lower; bearish: high ≥ upper) | APPROVED |
 
 Mitigation and fill are evaluated on 1m bars regardless of the FVG timeframe and can never precede
 confirmation (tested).
@@ -75,10 +81,11 @@ FIXED universe — nothing else can be a sweep reference, and the config schema 
 
 - FIXED exclusion: 1-minute swings are never liquidity. `LiquidityConfig.validate` rejects `swing_1m`,
   `swing_5m`, `swing_1h`, `mss_swing`; `swing_timeframe` must be `"15m"`.
-- PARAM: `swing_left`, `swing_right` (default 2/2 — ASSUMPTION, the specification gives no default),
-  `equal_handling` (`first`: strictly greater on the left, ≥ on the right; `last`: mirror; `strict`),
-  `prewindow_lookback` (`session_open` or `<N>m`).
-- ASSUMPTION: previous session = previous *present* session in the data (a closed exchange day is
+- PARAM with APPROVED defaults: `swing_left` / `swing_right` = 2 / 2 (independently configurable from
+  the MSS and bias fractals), `equal_handling = first` (strictly greater on the left, ≥ on the right;
+  `last`: mirror; `strict`), `prewindow_lookback = session_open` (APPROVED: high/low from the current
+  CME session open up to, excluding, the window start; frozen at the window start).
+- APPROVED: previous session = previous *present* session in the data (a closed exchange day is
   skipped, not treated as a zero-range session). `source_session_complete` records whether that
   session had every minute.
 - Buyside = highs, sellside = lows.
@@ -104,8 +111,9 @@ States: activated → penetrated → confirmed sweep / no reversal → consumed.
 
 - FIXED: candle range (high − low) relative to ATR(14); thresholds 1.0 / 1.5 / 2.0 / 3.0 × ATR all
   evaluated; `threshold_passed` = highest met.
-- ASSUMPTION/PARAM `atr_reference = prior_candle`: the baseline is the ATR at the previous candle's
-  close so the displacement candle does not inflate its own baseline (`same_candle` available).
+- APPROVED/PARAM `atr_reference = prior_candle`: the baseline is the ATR(14) at the prior completed
+  candle's close, so the candidate displacement candle is excluded from its own baseline
+  (`same_candle` remains available for comparison only).
 - Percentile definition (PARAM): ratio ≥ the `percentile`-th percentile of the ratios of the
   previous `percentile_lookback` candles (strictly prior candles).
 - Direction: close > open bullish, close < open bearish, else none. Confirmation = candle close.
@@ -118,10 +126,12 @@ States: activated → penetrated → confirmed sweep / no reversal → consumed.
   with `close` or `wick` confirmation (PARAM).
 - MSS swings use their own fractal parameters (PARAM `mss.swing_left/right`) and are **never** used as
   liquidity references (separate table, separate config section).
-- ASSUMPTION "eligible": confirmed at or before the sweep confirmation, and not already broken (by the
+- APPROVED "eligible": confirmed at or before the sweep confirmation, and not already broken (by the
   chosen confirmation method) between the swing candle and the sweep confirmation.
-- PARAM `max_bars_after_sweep`: search horizon in MSS-timeframe candles starting at the first candle
-  that opens at/after the sweep confirmation. Rows with `found = False` record the swing used.
+- PARAM `max_bars_after_sweep` (APPROVED default 60, explicitly *not* a methodology requirement):
+  search horizon in MSS-timeframe candles starting at the first candle that opens at/after the sweep
+  confirmation. Alternative horizons are a config change only. Rows with `found = False` record the
+  swing used.
 
 ## 8. Higher-timeframe bias (`features/bias.py`)
 
@@ -131,15 +141,23 @@ Evaluated at each Silver Bullet window start with data available at that instant
 |---|---|---|
 | none | always "none" | FIXED option |
 | prev_day_oc | previous completed session close vs open | FIXED |
-| swing_15m_structure | last two confirmed 15m swing highs and lows: HH & HL → bullish, LH & LL → bearish, else none | ASSUMPTION (structure rule) |
-| swing_1h_structure | same on 1h candles | ASSUMPTION |
-| daily_ma20_slope | SMA(20) of completed session closes; last − previous > 0 bullish, < 0 bearish; none until 21 completed sessions | FIXED period, ASSUMPTION slope rule |
+| swing_15m_structure | last two confirmed 15m swing highs and lows: HH & HL → bullish, LH & LL → bearish, else none | APPROVED (structure rule) |
+| swing_1h_structure | same on 1h candles | APPROVED |
+| daily_ma20_slope | SMA(20) of completed session closes; last − previous > 0 bullish, < 0 bearish; none until 21 completed sessions | FIXED period, APPROVED slope rule |
+
+Neutral and tie conditions (APPROVED, implemented in `features/bias.py`):
+
+- prev_day_oc: no completed previous session → none; close == open → none.
+- swing structure: fewer than two confirmed highs or two confirmed lows at the evaluation time → none;
+  last high == previous high or last low == previous low → none; mixed (HH with LL, or LH with HL) → none.
+- daily_ma20_slope: fewer than 21 completed sessions → none; slope exactly 0 → none.
 | perfect_window | window's own open-to-close direction | **LOOKAHEAD / INVALID FOR LIVE TRADING** |
 | perfect_session | direction from the window open to the session close | **LOOKAHEAD / INVALID FOR LIVE TRADING** |
 
-Lookahead detectors raise `PermissionError` unless `bias.allow_lookahead_diagnostic = true`; a
-validated research config rejects them as `bias.detector`; every row they produce has
-`lookahead = True`. They must never enter candidate selection or the holdout evaluation.
+Both lookahead variants are retained as diagnostics only (APPROVED). They raise `PermissionError`
+unless `bias.allow_lookahead_diagnostic = true`; a validated research config rejects them as
+`bias.detector`; every row they produce has `lookahead = True`. They are excluded from candidate
+selection, optimisation and the holdout evaluation.
 
 ## 9. Silver Bullet windows (`features/windows.py`)
 
@@ -171,20 +189,32 @@ opposing eligible liquidity (approved universe only, §4) or time-based exit; co
 window; no overlapping positions; commission and slippage; stop-first resolution when the intrabar
 order is ambiguous. None of this is implemented in Layer 2.
 
-## 12. Unresolved ambiguities (require a decision before Layer 3 relies on them)
+## 12. Ambiguity resolution (2026-10-31) and remaining open items
 
-1. (resolved) The written specification is the authoritative source; no further reference to the
-   original screenshots is needed.
-2. FVG `formation_ts` (candle-1 open) and the mitigation/full-fill thresholds (strict trade-inside;
-   touch of the distal boundary) are assumptions.
-3. ATR smoothing (Wilder) and the gap treatment of true range are assumptions.
-4. Fractal defaults (2 left / 2 right) for liquidity swings, MSS swings and structure bias are
-   assumptions; the specification only requires configurability.
-5. Pre-window range = session open → window start (not a fixed look-back).
-6. Displacement ATR reference = prior candle.
-7. MSS "eligible swing" excludes swings already broken before the sweep; search horizon 60 candles.
-8. Structure-bias rule (two most recent confirmed swings) and the MA-slope sign rule are assumptions.
-9. Which lookahead "perfect bias" the original research used (window vs session direction) is unknown;
-   both are implemented as isolated diagnostics.
-10. Whether HTF candles with a missing minute should be usable for FVGs (currently excluded by
-    `require_complete_candles = true`).
+Resolved and approved as explicit implementation choices (see APPROVED markers above):
+
+1. Written specification is the authoritative source.
+2. FVG formation = candle-1 open; confirmation/eligibility after candle-3 close; mitigation = strictly
+   inside; full fill = distal boundary reached.
+3. Wilder ATR(14); no true range across missing intervals; ATR unavailable after a within-session data
+   hole until a fresh 14-candle warm-up (`atr.reset_on_data_gap`).
+4. 2-left / 2-right confirmed fractals by default for 15m liquidity swings, MSS swings and structure
+   bias, each independently configurable; 1-minute swings remain prohibited as liquidity references.
+5. Pre-window liquidity = current session open → window start (exclusive), frozen at the window start.
+6. Displacement baseline = prior completed candle's ATR(14).
+7. MSS excludes swings already broken before the sweep; 60-candle horizon is a configurable default.
+8. Structure bias from the two most recent confirmed swings; MA bias from the sign of the SMA(20)
+   slope; neutral/tie conditions as documented in §8.
+9. Window- and session-based perfect-bias diagnostics retained, labelled LOOKAHEAD, excluded from
+   candidate selection, optimisation and holdout validation.
+10. Incomplete higher-timeframe candles are excluded from FVG formation; missing-data flags are
+    preserved; no bars are fabricated.
+
+Remaining open items (none block Layer 3; each is a config parameter):
+
+- `equal_handling` for fractal swings defaults to `first`; the specification only requires determinism.
+- `liquidity.consumption_rule`: a penetration that never reverses within the delay consumes the level
+  (`penetration_no_reversal`). An alternative rule (consume only on confirmed sweeps) is a one-line
+  config change if Layer 3 needs it.
+- The sweep execution timeframe (1m default, 5m allowed) and the displacement/MSS timeframes are
+  research parameters whose sweep ranges will be set in Layer 4.

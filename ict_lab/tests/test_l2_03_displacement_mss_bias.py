@@ -142,3 +142,38 @@ def test_lookahead_bias_isolated(sessions):
     from ict_lab.features.config import Layer2Config
     with pytest.raises(ValueError):
         Layer2Config(series_id="x", bias=BiasConfig(detector="perfect_session")).validate()
+
+
+def test_atr_resets_after_within_session_hole_but_not_across_session_break(sessions):
+    from ict_lab.features.atr import atr, data_discontinuity
+    # 40 flat bars with one missing minute at 10:20 -> hole; ATR NaN for 14 candles after the hole
+    rows = flat(40, 100, 1.0)
+    bars = make_bars(sessions, "2024-05-15 10:00", rows, drop_minutes=("2024-05-15 10:20",))
+    c = resample(bars, "1m")
+    disc = data_discontinuity(c)
+    assert disc.sum() == 1 and c.loc[disc, "ts_ny"].iloc[0] == pd.Timestamp("2024-05-15 10:21", tz=NY)
+    a = atr(c, 14, "wilder", reset_on_data_gap=True)
+    i = int(np.where(disc)[0][0])
+    assert not np.isnan(a[i - 1]) and np.isnan(a[i:i + 13]).all() and a[i + 13] == 2.0
+    a2 = atr(c, 14, "wilder", reset_on_data_gap=False)
+    assert not np.isnan(a2[i])
+    # session break: last bar 16:59 then 18:00 next session -> not a data discontinuity, ATR carries
+    rows = flat(20, 100, 1.0)
+    b = pd.concat([make_bars(sessions, "2024-05-15 16:40", rows), make_bars(sessions, "2024-05-15 18:00", rows)], ignore_index=True)
+    b["consecutive_prev"] = (b["ts_utc"].diff().dt.total_seconds().div(60).to_numpy() == 1.0)
+    c2 = resample(b, "1m")
+    assert data_discontinuity(c2).sum() == 0
+    a3 = atr(c2, 14, "wilder")
+    assert not np.isnan(a3[20]) and not np.isnan(a3[-1])
+
+
+def test_incomplete_htf_candle_is_a_discontinuity_and_forms_no_fvg(sessions, spec):
+    from ict_lab.features.atr import data_discontinuity
+    from ict_lab.features.fvg import detect_fvg
+    from ict_lab.features.config import FVGConfig, ATRConfig
+    rows = flat(5, 100, 0.5) + [(100.5, 110, 100.4, 109.5)] * 5 + [(109.5, 112, 108, 111)] * 5 + flat(5, 110, 0.5)
+    bars = make_bars(sessions, "2024-05-15 10:00", rows, drop_minutes=("2024-05-15 10:07",))   # hole inside candle 2
+    c5 = resample(bars, "5m")
+    assert not c5["complete"].iloc[1] and data_discontinuity(c5)[1]
+    assert detect_fvg(c5, bars, "5m", FVGConfig(), ATRConfig(), "t", spec.tick_size).empty
+    assert len(detect_fvg(c5, bars, "5m", FVGConfig(require_complete_candles=False), ATRConfig(), "t", spec.tick_size)) == 1

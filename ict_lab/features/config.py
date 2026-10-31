@@ -22,6 +22,7 @@ LOOKAHEAD_BIAS = ("perfect_window", "perfect_session")      # LOOKAHEAD / INVALI
 class ATRConfig:
     period: int = 14
     method: str = "wilder"
+    reset_on_data_gap: bool = True
 
 
 @dataclass(frozen=True)

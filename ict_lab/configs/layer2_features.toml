@@ -1,28 +1,30 @@
 # Layer 2 — ICT feature detection configuration. Hashed into every feature run manifest.
-# Fixed methodology requirements are marked FIXED; everything else is a research parameter.
+# FIXED = methodology requirement; APPROVED = implementation choice approved in the Layer 2 ambiguity
+# resolution (documented in docs/silver_bullet_methodology.md); PARAM = research parameter.
 
 [series]
 series_id = "mnq_volcross_next_session_backadj_v1"   # any id registered in features/series.py
 
 [atr]
 period = 14                 # FIXED: ATR(14)
-method = "wilder"           # ASSUMPTION: Wilder smoothing (alternative: "sma")
+method = "wilder"           # APPROVED: Wilder smoothing (alternative: "sma")
+reset_on_data_gap = true    # APPROVED: ATR unavailable after a within-session data hole until a fresh warm-up
 
 [fvg]
 timeframes = ["1m", "5m", "15m"]   # FIXED set of supported source timeframes
 min_gap_points = 0.0        # research parameter (0 = no size filter)
 min_gap_atr = 0.0           # research parameter: gap_points / ATR(14) at candle-3 close
-require_complete_candles = true    # ASSUMPTION: all three candles must be complete and bucket-consecutive
-mitigation_rule = "trade_inside"   # ASSUMPTION: first bar trading strictly inside the gap (see docs)
+require_complete_candles = true    # APPROVED: all three candles must be complete and bucket-consecutive
+mitigation_rule = "trade_inside"   # APPROVED: first bar trading strictly inside the gap; full fill = distal boundary reached
 
 [liquidity]
 # FIXED universe. 1-minute swings are NOT a liquidity source and cannot be added here.
 universe = ["prev_session", "prev_rth", "prewindow", "swing_15m"]
 swing_timeframe = "15m"     # FIXED: only "15m" is accepted
-swing_left = 2              # research parameter: left confirmation candles
-swing_right = 2             # research parameter: right confirmation candles
-equal_handling = "first"    # ASSUMPTION: "first" | "last" | "strict" (see docs)
-prewindow_lookback = "session_open"   # ASSUMPTION: pre-window range runs from the session open to the window start
+swing_left = 2              # APPROVED default (PARAM): left confirmation candles
+swing_right = 2             # APPROVED default (PARAM): right confirmation candles
+equal_handling = "first"    # APPROVED: "first" | "last" | "strict" (see docs)
+prewindow_lookback = "session_open"   # APPROVED: pre-window range = current session open -> window start (exclusive), frozen at window start
 consumption_rule = "sweep_or_no_reversal"   # level consumed by a confirmed sweep or by penetration without reversal
 allow_reuse = false         # FIXED default: consumed levels are not reused
 
@@ -34,22 +36,22 @@ max_confirmation_bars = 3   # FIXED default: close back within 3 completed bars 
 [displacement]
 timeframe = "1m"
 thresholds = [1.0, 1.5, 2.0, 3.0]   # FIXED set of supported ATR multiples
-atr_reference = "prior_candle"       # ASSUMPTION: ATR of the previous candle (not inflated by the candle itself)
+atr_reference = "prior_candle"       # APPROVED: ATR of the prior completed candle (candidate excluded from its own baseline)
 percentile_lookback = 200            # research parameter: prior candles used for the percentile baseline
 percentile = 90.0                    # research parameter
 record_min_ratio = 1.0               # rows with range/ATR below this are not written (table size)
 
 [mss]
 timeframe = "1m"            # "1m" | "5m" | "15m"; MSS swings are separate from liquidity swings
-swing_left = 2
+swing_left = 2              # APPROVED default (PARAM), independent of the liquidity swing parameters
 swing_right = 2
 equal_handling = "first"
 confirmation = "close"      # "close" (close-through) | "wick" (wick-through)
-max_bars_after_sweep = 60   # research parameter: search horizon in candles of [mss].timeframe
+max_bars_after_sweep = 60   # APPROVED default (PARAM, not a methodology requirement): horizon in [mss].timeframe candles
 
 [bias]
 detector = "none"           # none | prev_day_oc | swing_15m_structure | swing_1h_structure | daily_ma20_slope
-swing_left = 2
+swing_left = 2              # APPROVED default (PARAM), independent of liquidity/MSS swings
 swing_right = 2
 ma_period = 20              # FIXED for daily_ma20_slope
 allow_lookahead_diagnostic = false   # must be true to compute perfect_* diagnostics; never for candidate selection

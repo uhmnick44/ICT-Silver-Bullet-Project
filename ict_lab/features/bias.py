@@ -6,7 +6,12 @@ Valid detectors (causal):
   swing_15m_structure  : last two confirmed 15m swing highs and lows — HH+HL bullish, LH+LL bearish, else none
   swing_1h_structure   : same on 1h candles
   daily_ma20_slope     : SMA(20) of completed-session closes rising -> bullish, falling -> bearish
-LOOKAHEAD diagnostics (INVALID FOR LIVE TRADING, excluded from candidate selection and holdout):
+Neutral / tie conditions (approved implementation choices):
+  prev_day_oc          : no completed previous session -> none; close == open -> none
+  swing structure      : fewer than two confirmed highs or two confirmed lows -> none; last high == previous high
+                         or last low == previous low -> none; HH with LL or LH with HL (mixed) -> none
+  daily_ma20_slope     : fewer than ma_period + 1 completed sessions -> none; slope == 0 -> none
+LOOKAHEAD diagnostics (INVALID FOR LIVE TRADING, excluded from candidate selection, optimisation and holdout):
   perfect_window       : the window's own open-to-close direction
   perfect_session      : direction from the window open to the session close
 """

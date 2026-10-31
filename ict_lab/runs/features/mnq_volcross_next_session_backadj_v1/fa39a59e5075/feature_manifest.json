@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-10-31T01:20:22.549003+00:00",
+  "generated_utc": "2026-10-31T02:58:53.479429+00:00",
   "series_id": "mnq_volcross_next_session_backadj_v1",
   "series_spec": {
     "series_id": "mnq_volcross_next_session_backadj_v1",
@@ -8,12 +8,13 @@
     "layer1_series": "backadjusted",
     "description": "MNQ 1m, lab volume-crossover roll effective next session, additive back-adjustment anchored to latest contract"
   },
-  "layer2_config_hash": "44619906236db4ce23801a147aa20558672de0230b4d66325fa064848609a620",
+  "layer2_config_hash": "fa39a59e50755201f3249921087401006a6bc058f1c9e285771f886f1de01dc2",
   "layer2_config": {
     "series_id": "mnq_volcross_next_session_backadj_v1",
     "atr": {
       "period": 14,
-      "method": "wilder"
+      "method": "wilder",
+      "reset_on_data_gap": true
     },
     "fvg": {
       "timeframes": [
@@ -103,7 +104,7 @@
     },
     "fvg": {
       "rows": 182384,
-      "content_hash": "8bcec38b769803808bf1f72714dbf7a48d7b9b3d23887fbff4669f8f687cb188"
+      "content_hash": "3d442dcb34653f072cd81efb0757959b05db88157dcfde055edc93664ece2d0d"
     },
     "liquidity_levels": {
       "rows": 18257,
@@ -114,8 +115,8 @@
       "content_hash": "ab653e4968cf832217bdfc7d3d4c3e134d511942e7859d0db861bdb3aa773344"
     },
     "displacement": {
-      "rows": 285523,
-      "content_hash": "9eabcfbcec2b9eb919b615b3caf6680f82850f451340ae7a217f630dbf04fa3b"
+      "rows": 285518,
+      "content_hash": "2e9a3fc8aa9b4bb311a7d07754cc353cec463bdf9d59812cffb5eb9fc9bbf177"
     },
     "mss": {
       "rows": 10244,
