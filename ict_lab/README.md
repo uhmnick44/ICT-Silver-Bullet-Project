@@ -24,9 +24,12 @@ ict_lab/
 │                                #   session_coverage_report.md/csv, gaps.csv, discontinuities.csv
 ├── engine/                      # config, instrument, sessions, ingest, rolls, continuous, quality, pipeline, loader, manifest
 ├── analysis/roll_chart.py       # chart verification around rolls;  analysis/layer1_summary.py
-├── features/                    # Layer 2 (empty)
+├── analysis/feature_charts.py   # Layer 2: 15 seeded development-period feature verification charts
+├── features/                    # Layer 2: series registry, timeframes, atr, swings, fvg, liquidity, sweeps,
+│                                #   displacement, mss, bias, windows, config, run
+├── docs/silver_bullet_methodology.md   # Layer 2 feature definitions, parameters, assumptions, ambiguities
 ├── runs/                        # pipeline run logs, holdout_access.log, roll_charts/
-└── tests/                       # pytest suite (50 tests)
+└── tests/                       # pytest suite (Layer 1 test_0*.py, Layer 2 test_l2_*.py)
 ```
 
 ## Reproduce
@@ -149,3 +152,25 @@ Nothing in Layer 1 computes signals or performance on any split.
 5. The first session (2022-10-03) is flagged non-causal and is ineligible for strictly causal
    strategy testing; it stays in the development split for look-back context only.
 6. Single-digit year codes in raw symbols are mapped to the 2020s (valid for 2022–2029 data).
+
+
+## Layer 2 — ICT feature detection
+
+Definitions, parameters and assumptions: `docs/silver_bullet_methodology.md`.
+Configuration: `configs/layer2_features.toml` (hashed into every feature run manifest).
+
+```bash
+python -m ict_lab.features.run                      # all features on the development split (~45 s)
+python -m ict_lab.analysis.feature_charts           # 15 seeded verification charts -> runs/feature_charts/
+python -m pytest ict_lab/tests -k l2                # Layer 2 tests only
+```
+
+Outputs land in `runs/features/<series_id>/<config_hash[:12]>/`: `fvg`, `liquidity_levels`, `sweeps`,
+`displacement`, `mss`, `bias`, `windows`, `rolls` (Parquet) and `feature_manifest.json` (series spec,
+Layer 2 config + hash, Layer 1 config hash and back-adjusted content hash, software versions, row counts
+and content hashes, `holdout_accessed: false`).
+
+Rules enforced in code: approved liquidity universe only (no 1-minute swing liquidity, schema-rejected);
+features confirm only after their candle closes; no forward-filling; `consecutive_prev` guards against
+treating gaps as adjacent bars; lookahead "perfect bias" diagnostics are isolated behind an explicit flag
+and rejected by validated research configs; detectors are series-agnostic (`features/series.py`).

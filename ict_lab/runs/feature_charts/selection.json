@@ -1,0 +1,84 @@
+{
+  "seed": 20261031,
+  "n": 15,
+  "eligible_windows": 1567,
+  "series": "mnq_volcross_next_session_backadj_v1",
+  "config_hash": "44619906236db4ce23801a147aa20558672de0230b4d66325fa064848609a620",
+  "selection": [
+    {
+      "trading_date": "2022-10-21",
+      "window": "sb_ny_pm",
+      "file": "2022-10-21_sb_ny_pm.png"
+    },
+    {
+      "trading_date": "2022-11-08",
+      "window": "sb_london",
+      "file": "2022-11-08_sb_london.png"
+    },
+    {
+      "trading_date": "2023-01-06",
+      "window": "sb_ny_am",
+      "file": "2023-01-06_sb_ny_am.png"
+    },
+    {
+      "trading_date": "2023-03-03",
+      "window": "sb_london",
+      "file": "2023-03-03_sb_london.png"
+    },
+    {
+      "trading_date": "2023-05-23",
+      "window": "sb_ny_am",
+      "file": "2023-05-23_sb_ny_am.png"
+    },
+    {
+      "trading_date": "2023-06-23",
+      "window": "sb_ny_am",
+      "file": "2023-06-23_sb_ny_am.png"
+    },
+    {
+      "trading_date": "2023-08-31",
+      "window": "sb_ny_pm",
+      "file": "2023-08-31_sb_ny_pm.png"
+    },
+    {
+      "trading_date": "2023-11-22",
+      "window": "sb_ny_pm",
+      "file": "2023-11-22_sb_ny_pm.png"
+    },
+    {
+      "trading_date": "2023-11-30",
+      "window": "sb_ny_am",
+      "file": "2023-11-30_sb_ny_am.png"
+    },
+    {
+      "trading_date": "2024-02-28",
+      "window": "sb_ny_pm",
+      "file": "2024-02-28_sb_ny_pm.png"
+    },
+    {
+      "trading_date": "2024-02-29",
+      "window": "sb_london",
+      "file": "2024-02-29_sb_london.png"
+    },
+    {
+      "trading_date": "2024-07-09",
+      "window": "sb_london",
+      "file": "2024-07-09_sb_london.png"
+    },
+    {
+      "trading_date": "2024-07-19",
+      "window": "sb_london",
+      "file": "2024-07-19_sb_london.png"
+    },
+    {
+      "trading_date": "2024-07-25",
+      "window": "sb_london",
+      "file": "2024-07-25_sb_london.png"
+    },
+    {
+      "trading_date": "2024-09-10",
+      "window": "sb_ny_pm",
+      "file": "2024-09-10_sb_ny_pm.png"
+    }
+  ]
+}

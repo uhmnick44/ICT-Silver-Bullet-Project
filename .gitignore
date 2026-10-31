@@ -14,3 +14,5 @@ ict_lab/data/clean/partitioned/
 ict_lab/runs/roll_charts/
 ict_lab/runs/pipeline_run_*.json
 .pytest_cache/
+ict_lab/runs/features/**/*.parquet
+ict_lab/runs/features_full_run.log

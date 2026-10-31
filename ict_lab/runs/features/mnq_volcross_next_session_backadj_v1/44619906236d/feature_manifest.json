@@ -1,0 +1,133 @@
+{
+  "generated_utc": "2026-10-31T01:20:22.549003+00:00",
+  "series_id": "mnq_volcross_next_session_backadj_v1",
+  "series_spec": {
+    "series_id": "mnq_volcross_next_session_backadj_v1",
+    "roll_convention": "lab_volume_crossover_next_session_v1",
+    "adjustment": "backadjusted",
+    "layer1_series": "backadjusted",
+    "description": "MNQ 1m, lab volume-crossover roll effective next session, additive back-adjustment anchored to latest contract"
+  },
+  "layer2_config_hash": "44619906236db4ce23801a147aa20558672de0230b4d66325fa064848609a620",
+  "layer2_config": {
+    "series_id": "mnq_volcross_next_session_backadj_v1",
+    "atr": {
+      "period": 14,
+      "method": "wilder"
+    },
+    "fvg": {
+      "timeframes": [
+        "1m",
+        "5m",
+        "15m"
+      ],
+      "min_gap_points": 0.0,
+      "min_gap_atr": 0.0,
+      "require_complete_candles": true,
+      "mitigation_rule": "trade_inside"
+    },
+    "liquidity": {
+      "universe": [
+        "prev_session",
+        "prev_rth",
+        "prewindow",
+        "swing_15m"
+      ],
+      "swing_timeframe": "15m",
+      "swing_left": 2,
+      "swing_right": 2,
+      "equal_handling": "first",
+      "prewindow_lookback": "session_open",
+      "consumption_rule": "sweep_or_no_reversal",
+      "allow_reuse": false
+    },
+    "sweep": {
+      "timeframe": "1m",
+      "min_penetration_ticks": 1,
+      "max_confirmation_bars": 3
+    },
+    "displacement": {
+      "timeframe": "1m",
+      "thresholds": [
+        1.0,
+        1.5,
+        2.0,
+        3.0
+      ],
+      "atr_reference": "prior_candle",
+      "percentile_lookback": 200,
+      "percentile": 90.0,
+      "record_min_ratio": 1.0
+    },
+    "mss": {
+      "timeframe": "1m",
+      "swing_left": 2,
+      "swing_right": 2,
+      "equal_handling": "first",
+      "confirmation": "close",
+      "max_bars_after_sweep": 60
+    },
+    "bias": {
+      "detector": "none",
+      "swing_left": 2,
+      "swing_right": 2,
+      "ma_period": 20,
+      "allow_lookahead_diagnostic": false
+    },
+    "windows": [
+      "sb_london",
+      "sb_ny_am",
+      "sb_ny_pm"
+    ]
+  },
+  "layer1_config_hash": "06eb8453396d521786b22379b0f35470a0527a228d760c76071fef6edbd046e5",
+  "layer1_backadjusted_content_hash": "159055aaa2fd877d3f375c811b7c6d142fb74b66155b131c8d3bed47baf89578",
+  "development_bars": 726673,
+  "development_range": [
+    "2022-10-03",
+    "2024-10-18"
+  ],
+  "holdout_accessed": false,
+  "software": {
+    "python": "3.13.17",
+    "platform": "Linux-6.18.44-fc-v185-x86_64-with-glibc2.39",
+    "pandas": "3.0.5",
+    "numpy": "2.5.3",
+    "pyarrow": "26.0.0",
+    "databento": "0.89.0"
+  },
+  "tables": {
+    "windows": {
+      "rows": 1590,
+      "content_hash": "113060f084811e4da3b6f179b3718fdf9ee8d6879de6a03e779006c7cf8eaa1f"
+    },
+    "fvg": {
+      "rows": 182384,
+      "content_hash": "8bcec38b769803808bf1f72714dbf7a48d7b9b3d23887fbff4669f8f687cb188"
+    },
+    "liquidity_levels": {
+      "rows": 18257,
+      "content_hash": "c0bc918300775238eb97ab58cba4aa3d655a422e18eb102ba3eea7f070cb3a1d"
+    },
+    "sweeps": {
+      "rows": 14792,
+      "content_hash": "ab653e4968cf832217bdfc7d3d4c3e134d511942e7859d0db861bdb3aa773344"
+    },
+    "displacement": {
+      "rows": 285523,
+      "content_hash": "9eabcfbcec2b9eb919b615b3caf6680f82850f451340ae7a217f630dbf04fa3b"
+    },
+    "mss": {
+      "rows": 10244,
+      "content_hash": "585227b3f8d845c6525212be22f8e3e0296958cb21a6a34585f4081f2b51c7cd"
+    },
+    "bias": {
+      "rows": 1590,
+      "content_hash": "062c8f796fdfca46a16bdf7e857fcb5536b6050ce3b4083c3351a7748e10a413"
+    },
+    "rolls": {
+      "rows": 8,
+      "content_hash": "dfc3ae502aeb6adb9fb90154ea87e4f20beb99604171e5905c1d337392cc11ce"
+    }
+  }
+}
