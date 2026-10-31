@@ -25,7 +25,7 @@ from .execution import BarArrays, simulate
 from .instrument import InstrumentSpec
 from .manifest import content_hash, software_versions
 from .sessions import SessionSpec
-from .signals import build_setup, prepare_tables
+from .signals import build_setups, prepare_tables
 
 TABLE_NAMES = ("windows", "fvg", "liquidity_levels", "sweeps", "displacement", "mss")
 
@@ -62,42 +62,87 @@ class FeatureStore:
 
 
 def run_backtest(cfg: Layer3Config, store: FeatureStore, log=lambda *_: None) -> dict:
+    """Chronological pass over trading windows. Per window: enumerate qualifying setups (one per confirmed
+    sweep, deterministic order), submit at most one order at a time, never while a position is open, never
+    reuse a sweep or FVG that already produced an order, stop at the window's trade allowance. A pending
+    unfilled order blocks newer setups until it fills or expires at the window end (keep_first)."""
     t0 = time.time()
     feats = dict(store.feats); feats["bias"] = store.bias_table(cfg.signal.bias_detector)
     tables = prepare_tables(feats, cfg.signal)
     levels = store.feats["liquidity_levels"]
     win = store.feats["windows"]; win = win[win["window"].isin(cfg.signal.windows)].sort_values(["start_ts_utc"]).reset_index(drop=True)
     ss = store.sessions
-    trades, diags = [], []
-    last_exit = None       # UTC timestamp of the last position exit
+    cap = cfg.signal.trade_cap
+    trades, diags, setup_log, wstats = [], [], [], []
+    last_exit = None                      # UTC timestamp of the last position's exit bar
+    used_sweeps, used_fvgs = set(), set()
     for w in win.itertuples(index=False):
         w = pd.Series(w._asdict())
-        start = pd.Timestamp(w["start_ts_utc"])
-        if last_exit is not None and last_exit >= start:
-            diags.append({"trading_date": w["trading_date"], "window": w["window"], "gate_failed": "position_free", "reason": f"position_open_until_{last_exit.isoformat()}", "sweeps_examined": 0}); continue
-        setup, diag = build_setup(w, tables, cfg.signal)
-        if setup is None:
-            diags.append(diag); continue
-        d = pd.Timestamp(w["trading_date"])
+        d = pd.Timestamp(w["trading_date"]); start = pd.Timestamp(w["start_ts_utc"])
         rth_end = ss.session_close_utc(d) - pd.Timedelta(minutes=ss.close_minute - ss.windows["rth"][1])
-        trade, nd = simulate(setup, store.bars, cfg, store.spec, levels, rth_end, store.roll_ts)
-        if trade is None:
-            diags.append({**nd, "sweeps_examined": diag["sweeps_examined"]}); continue
-        trade["trade_id"] = f"T{len(trades) + 1:05d}_{d.date()}_{w['window']}"
-        trade["config_hash"] = cfg.config_hash; trade["series_id"] = store.data.series_id
-        trade["vendor_degraded_utc_overlap"] = bool(w["vendor_degraded_utc_overlap"]); trade["calendar_status"] = w["calendar_status"]
-        trade["observed_session_status"] = w["observed_session_status"]; trade["sweeps_examined"] = diag["sweeps_examined"]
-        trades.append(trade)
-        last_exit = trade["exit_ts_utc"]
+        setups, diag = build_setups(w, tables, cfg.signal)
+        st = {"trading_date": d, "window": w["window"], "eligible": bool(w["eligible"]), "n_setups": len(setups), "n_submitted": 0, "n_filled": 0,
+              "n_canceled": 0, "n_rejected_execution": 0, "n_blocked_position_open": 0, "n_blocked_order_pending": 0, "n_blocked_trade_cap": 0,
+              "n_duplicate_setup": 0, "first_failed_gate": diag["gate_failed"], "first_failed_reason": diag["reason"]}
+        if not setups:
+            if last_exit is not None and last_exit >= start and bool(w["eligible"]):
+                st["first_failed_gate"], st["first_failed_reason"] = "position_free", f"position_open_until_{last_exit.isoformat()}"
+                diag.update(gate_failed="position_free", reason=st["first_failed_reason"])
+            diags.append(diag); wstats.append(st); continue
+        pending = False; first_outcome = None
+        for k, setup in enumerate(setups):
+            sid = f"{d.date()}:{w['window']}:s{setup.sweep_id}:{setup.fvg_id}"
+            rec = {"setup_id": sid, "trading_date": d, "window": w["window"], "rank_in_window": k, "sweep_id": setup.sweep_id, "fvg_id": setup.fvg_id,
+                   "direction": setup.direction, "level_type": setup.level_type, "setup_ts_utc": setup.setup_ts_utc, "outcome": None, "reason": None, "trade_id": None}
+            if st["n_filled"] >= cap:
+                rec.update(outcome="rejected", reason="trade_cap_reached"); st["n_blocked_trade_cap"] += 1
+            elif last_exit is not None and setup.setup_ts_utc <= last_exit:
+                rec.update(outcome="rejected", reason="position_open"); st["n_blocked_position_open"] += 1
+            elif pending:
+                rec.update(outcome="rejected", reason="order_pending"); st["n_blocked_order_pending"] += 1
+            elif setup.sweep_id in used_sweeps or setup.fvg_id in used_fvgs:
+                rec.update(outcome="rejected", reason="duplicate_setup"); st["n_duplicate_setup"] += 1
+            else:
+                trade, nd = simulate(setup, store.bars, cfg, store.spec, levels, rth_end, store.roll_ts)
+                if trade is None and nd["gate_failed"] != "entry_fill":
+                    rec.update(outcome="rejected_execution", reason=f"{nd['gate_failed']}:{nd['reason']}"); st["n_rejected_execution"] += 1
+                    first_outcome = first_outcome or {**nd, "sweeps_examined": diag["sweeps_examined"]}
+                elif trade is None:
+                    st["n_submitted"] += 1; st["n_canceled"] += 1; pending = True
+                    used_sweeps.add(setup.sweep_id); used_fvgs.add(setup.fvg_id)
+                    rec.update(outcome="canceled", reason=nd["reason"])
+                    first_outcome = first_outcome or {**nd, "sweeps_examined": diag["sweeps_examined"]}
+                else:
+                    st["n_submitted"] += 1; st["n_filled"] += 1
+                    used_sweeps.add(setup.sweep_id); used_fvgs.add(setup.fvg_id)
+                    trade["trade_id"] = f"T{len(trades) + 1:05d}_{d.date()}_{w['window']}"; trade["setup_id"] = sid
+                    trade["trade_in_window"] = st["n_filled"]; trade["setup_rank_in_window"] = k
+                    trade["config_hash"] = cfg.config_hash; trade["series_id"] = store.data.series_id; trade["config_name"] = cfg.meta.name
+                    trade["vendor_degraded_utc_overlap"] = bool(w["vendor_degraded_utc_overlap"]); trade["calendar_status"] = w["calendar_status"]
+                    trade["observed_session_status"] = w["observed_session_status"]; trade["sweeps_examined"] = diag["sweeps_examined"]
+                    trades.append(trade); last_exit = trade["exit_ts_utc"]
+                    rec.update(outcome="filled", trade_id=trade["trade_id"])
+            setup_log.append(rec)
+        if st["n_filled"] == 0:
+            if first_outcome is not None:
+                diags.append(first_outcome)
+            else:
+                r0 = setup_log[-len(setups)]
+                diags.append({"trading_date": d, "window": w["window"], "gate_failed": "position_free" if r0["reason"] == "position_open" else r0["reason"],
+                              "reason": r0["reason"], "sweeps_examined": diag["sweeps_examined"]})
+            st["first_failed_gate"] = diags[-1]["gate_failed"]; st["first_failed_reason"] = diags[-1]["reason"]
+        else:
+            st["first_failed_gate"] = None; st["first_failed_reason"] = None
+        wstats.append(st)
     tr = pd.DataFrame(trades)
     if len(tr):
         tr["included"] = ~tr["excluded_by_roll_policy"]
         tr["exclusion_reason"] = np.where(tr["excluded_by_roll_policy"], "spans_contract_roll", "")
-        first = ["trade_id", "config_hash", "series_id", "trading_date", "window", "direction", "level_type", "level_price"]
+        first = ["trade_id", "setup_id", "config_name", "config_hash", "series_id", "trading_date", "window", "trade_in_window", "direction", "level_type", "level_price"]
         tr = tr[first + [c for c in tr.columns if c not in first]]
-    nd = pd.DataFrame(diags)
-    log(f"  {len(tr)} trades, {len(nd)} windows without a trade in {time.time()-t0:.1f}s")
-    return {"trades": tr, "no_trade": nd, "elapsed": time.time() - t0}
+    nd = pd.DataFrame(diags); sl = pd.DataFrame(setup_log); ws = pd.DataFrame(wstats)
+    log(f"  {len(tr)} trades from {int(ws['n_setups'].sum())} setups / {int(ws['n_submitted'].sum())} orders; {len(nd)} windows without a trade in {time.time()-t0:.1f}s")
+    return {"trades": tr, "no_trade": nd, "setups": sl, "window_stats": ws, "elapsed": time.time() - t0}
 
 
 def write_backtest(result: dict, cfg: Layer3Config, store: FeatureStore, l2cfg, out_root: Path) -> Path:
@@ -105,10 +150,14 @@ def write_backtest(result: dict, cfg: Layer3Config, store: FeatureStore, l2cfg, 
     tr, nd = result["trades"], result["no_trade"]
     tr.to_parquet(out / "trades.parquet", index=False); tr.to_csv(out / "trades.csv", index=False)
     nd.to_csv(out / "no_trade_log.csv", index=False)
+    result["setups"].to_csv(out / "setup_log.csv", index=False); result["window_stats"].to_csv(out / "window_stats.csv", index=False)
     if len(tr):
         tr[tr["excluded_by_roll_policy"]].to_csv(out / "excluded_trades.csv", index=False)   # reported separately, never stitched
     l1m = json.loads((store.l1cfg.resolve("clean_dir") / "manifest.json").read_text())
-    manifest = {"generated_utc": datetime.now(timezone.utc).isoformat(), "layer3_config_hash": cfg.config_hash, "layer3_config": cfg.to_dict(),
+    ws = result["window_stats"]
+    manifest = {"generated_utc": datetime.now(timezone.utc).isoformat(), "config_name": cfg.meta.name, "layer3_config_hash": cfg.config_hash, "layer3_config": cfg.to_dict(),
+                "counts": {"eligible_windows": int(ws["eligible"].sum()) if len(ws) else 0, "qualifying_setups": int(ws["n_setups"].sum()) if len(ws) else 0,
+                           "submitted_orders": int(ws["n_submitted"].sum()) if len(ws) else 0, "filled_trades": int(len(tr)), "canceled_orders": int(ws["n_canceled"].sum()) if len(ws) else 0},
                 "layer2_config_hash": l2cfg.config_hash, "layer1_config_hash": l1m["config_hash"],
                 "layer1_backadjusted_content_hash": l1m["outputs"]["MNQ_1m_backadjusted.parquet"]["content_hash"],
                 "series_id": store.data.series_id, "feature_source": store.source, "holdout_accessed": False,
@@ -141,6 +190,7 @@ def main() -> None:
     if len(tr):
         print(tr["exit_reason"].value_counts().to_dict()); print("ambiguous:", int(tr["same_bar_ambiguous"].sum()), "spans_roll:", int(tr["spans_roll"].sum()))
     print(res["no_trade"]["gate_failed"].value_counts().to_dict())
+    ws = res["window_stats"]; print({k: int(ws[k].sum()) for k in ("n_setups", "n_submitted", "n_filled", "n_canceled", "n_rejected_execution", "n_blocked_position_open", "n_blocked_order_pending", "n_blocked_trade_cap", "n_duplicate_setup")})
 
 
 if __name__ == "__main__":

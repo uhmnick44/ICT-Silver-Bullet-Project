@@ -21,8 +21,9 @@ def test_config_rejects_non_approved_liquidity_and_lookahead_bias():
         Layer3Config(series_id="x", signal=SignalConfig(liquidity_types=("swing_1m",))).validate()
     with pytest.raises(ValueError):
         Layer3Config(series_id="x", signal=SignalConfig(bias_detector="perfect_window")).validate()
+    Layer3Config(series_id="x", signal=SignalConfig(max_trades_per_window=2)).validate()      # allowed since Layer 4 (cap 10)
     with pytest.raises(ValueError):
-        Layer3Config(series_id="x", signal=SignalConfig(max_trades_per_window=2)).validate()
+        Layer3Config(series_id="x", signal=SignalConfig(max_trades_per_window=0)).validate()
 
 
 def test_canonical_sequence_minimal():

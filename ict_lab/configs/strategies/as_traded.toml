@@ -1,0 +1,64 @@
+# Configuration C — as_traded (research baseline, NOT a recommended strategy)
+[meta]
+name = "as_traded"
+description = "ICT Silver Bullet as traded: 1m FVG, no bias, session refs plus 15m swings, displacement 1.5 ATR, fixed 2R, unlimited trades per window (hard cap 10)"
+stop_substitution_note = "Original methodology: stop beyond the displacement swing. That structural definition is unresolved; displacement_candle_extreme (one tick beyond the latest qualifying displacement candle extreme) is a documented substitution, not a replication of the original stop."
+research_baseline = true
+
+[signal]
+windows = ["sb_london", "sb_ny_am", "sb_ny_pm"]
+liquidity_universe = "session_refs_plus_swings"
+fvg_timeframe = "1m"
+min_fvg_points = 0.0
+min_fvg_atr = 0.0
+require_mss = false
+require_displacement = true
+displacement_threshold = 1.5
+bias_detector = "none"
+require_bias = false
+require_penetration_in_window = false
+max_trades_per_window = "unlimited"
+pending_order_policy = "keep_first"
+
+[target]
+type = "fixed_r"
+r_multiple = 2.0
+fallback = "fixed_r"
+fallback_r_multiple = 2.0
+fill_rule = "trade_through"
+
+[series]
+series_id = "mnq_volcross_next_session_backadj_v1"
+layer2_config = "configs/layer2_features.toml"
+
+[entry]
+location = "midpoint"
+fill_rule = "trade_through"
+marketable_at_activation = "fill_at_limit"
+expiry = "window_end"
+round_midpoint = "away_from_proximal"
+
+[stop]
+type = "displacement_candle_extreme"   # DOCUMENTED SUBSTITUTION for the original "beyond displacement swing" (unresolved)
+buffer_ticks = 1
+fixed_points = 20.0
+
+[exit]
+policy = "rth_end"                     # ASSUMPTION: original exit policy unspecified; positions closed at 16:00 ET open bar
+same_bar_rule = "stop_first"
+time_exit_price = "next_bar_open"
+
+[costs]
+commission_per_side = 0.39
+exchange_fee_per_side = 0.36
+clearing_fee_per_side = 0.19
+entry_slippage_ticks = 0
+target_slippage_ticks = 0
+stop_slippage_ticks = 1
+time_exit_slippage_ticks = 1
+
+[sizing]
+contracts = 1
+
+[roll]
+policy = "flag_and_exclude"

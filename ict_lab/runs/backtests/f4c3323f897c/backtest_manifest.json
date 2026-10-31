@@ -1,0 +1,131 @@
+{
+  "generated_utc": "2026-10-31T18:28:42.239517+00:00",
+  "config_name": "as_taught_1m",
+  "layer3_config_hash": "f4c3323f897c40b43e8afc044bd1a86ec3ab0d90f0759b9742937ce7fc478c06",
+  "layer3_config": {
+    "series_id": "mnq_volcross_next_session_backadj_v1",
+    "layer2_config": "configs/layer2_features.toml",
+    "meta": {
+      "name": "as_taught_1m",
+      "description": "ICT Silver Bullet as taught with a 1-minute FVG; otherwise identical to as_taught_5m",
+      "stop_substitution_note": "Original methodology: stop beyond the displacement swing. That structural definition is unresolved; displacement_candle_extreme (one tick beyond the latest qualifying displacement candle extreme) is a documented substitution, not a replication of the original stop.",
+      "research_baseline": true
+    },
+    "signal": {
+      "windows": [
+        "sb_london",
+        "sb_ny_am",
+        "sb_ny_pm"
+      ],
+      "liquidity_universe": "bsl_ssl_15m",
+      "liquidity_types": [
+        "swing_15m"
+      ],
+      "fvg_timeframe": "1m",
+      "min_fvg_points": 0.0,
+      "min_fvg_atr": 0.0,
+      "require_mss": false,
+      "require_displacement": true,
+      "displacement_threshold": 1.5,
+      "bias_detector": "swing_15m_structure",
+      "require_bias": false,
+      "require_penetration_in_window": false,
+      "max_trades_per_window": 1,
+      "pending_order_policy": "keep_first"
+    },
+    "entry": {
+      "location": "midpoint",
+      "fill_rule": "trade_through",
+      "marketable_at_activation": "fill_at_limit",
+      "expiry": "window_end",
+      "round_midpoint": "away_from_proximal"
+    },
+    "stop": {
+      "type": "displacement_candle_extreme",
+      "buffer_ticks": 1,
+      "fixed_points": 20.0
+    },
+    "target": {
+      "type": "opposing_liquidity",
+      "r_multiple": 2.0,
+      "opposing_liquidity_types": [
+        "swing_15m"
+      ],
+      "fallback": "fixed_r",
+      "fallback_r_multiple": 2.0,
+      "fill_rule": "trade_through"
+    },
+    "exit": {
+      "policy": "rth_end",
+      "same_bar_rule": "stop_first",
+      "time_exit_price": "next_bar_open"
+    },
+    "costs": {
+      "commission_per_side": 0.39,
+      "exchange_fee_per_side": 0.36,
+      "clearing_fee_per_side": 0.19,
+      "entry_slippage_ticks": 0,
+      "target_slippage_ticks": 0,
+      "stop_slippage_ticks": 1,
+      "time_exit_slippage_ticks": 1
+    },
+    "sizing": {
+      "contracts": 1
+    },
+    "roll": {
+      "policy": "flag_and_exclude"
+    }
+  },
+  "counts": {
+    "eligible_windows": 1567,
+    "qualifying_setups": 696,
+    "submitted_orders": 330,
+    "filled_trades": 248,
+    "canceled_orders": 82
+  },
+  "layer2_config_hash": "fa39a59e50755201f3249921087401006a6bc058f1c9e285771f886f1de01dc2",
+  "layer1_config_hash": "06eb8453396d521786b22379b0f35470a0527a228d760c76071fef6edbd046e5",
+  "layer1_backadjusted_content_hash": "159055aaa2fd877d3f375c811b7c6d142fb74b66155b131c8d3bed47baf89578",
+  "series_id": "mnq_volcross_next_session_backadj_v1",
+  "feature_source": "cache:/home/user/ICT-Silver-Bullet-Project/ict_lab/runs/features/mnq_volcross_next_session_backadj_v1/fa39a59e5075",
+  "holdout_accessed": false,
+  "development_range": [
+    "2022-10-03",
+    "2024-10-18"
+  ],
+  "trades": 248,
+  "trades_content_hash": "6c48fe5668382069e5c25fa5b4e8212c5b8891f98e610d0f3a779fd9d3eee20d",
+  "no_trade_windows": 1342,
+  "no_trade_content_hash": "cb7aaa26144ae014b22336666631891971b015d6c11fc9136c0f7d5ed5fb5a2b",
+  "gate_failure_counts": {
+    "sweep": 676,
+    "bias": 225,
+    "displacement": 193,
+    "stop": 113,
+    "entry_fill": 77,
+    "fvg": 30,
+    "window_eligible": 23,
+    "position_free": 5
+  },
+  "roll_exclusions": {
+    "policy": "flag_and_exclude",
+    "trades_spanning_roll": 0,
+    "trades_excluded": 0,
+    "reasons": {}
+  },
+  "trades_included": 248,
+  "exit_reason_counts": {
+    "stop": 204,
+    "target": 34,
+    "time_exit_rth": 10
+  },
+  "software": {
+    "python": "3.13.17",
+    "platform": "Linux-6.18.44-fc-v185-x86_64-with-glibc2.39",
+    "pandas": "3.0.5",
+    "numpy": "2.5.3",
+    "pyarrow": "26.0.0",
+    "databento": "0.89.0"
+  },
+  "elapsed_seconds": 7.13
+}

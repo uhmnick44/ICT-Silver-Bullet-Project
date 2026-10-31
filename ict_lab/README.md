@@ -197,3 +197,17 @@ cached feature tables (cached and recomputed features give identical trades, tes
 
 The `displacement_swing` stop is blocked in the config schema until a swing-selection rule is approved;
 the baseline runs with the FVG-distal stop as a labelled provisional stand-in.
+
+
+## Layer 4 — named configurations, multi-trade windows, frequency diagnostics
+
+```bash
+python -m ict_lab.engine.backtest --config ict_lab/configs/strategies/as_traded.toml
+python -m ict_lab.analysis.frequency            # analysis/frequency_report.{csv,md}, no_trade_reasons.csv, named_configs_manifest.json
+python -m ict_lab.analysis.layer4_verification  # analysis/layer4_verification.md (hand-checked trades by category)
+python -m pytest ict_lab/tests -k l4
+```
+
+Named configurations (`configs/strategies/`): `as_taught_5m`, `as_taught_1m`, `as_traded` — research
+baselines, not recommended strategies; all use the documented `displacement_candle_extreme` stop
+substitution. Multi-trade rules and counters are described in `docs/execution_assumptions.md`.

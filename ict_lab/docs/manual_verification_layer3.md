@@ -5,7 +5,7 @@ Prices are back-adjusted (unadjusted close shown for basis). Bars listed from 3 
 **Summary:** trades 10 (stop 7, target 2, time 1, ambiguous 0), unfilled orders 6, replay discrepancies 0.
 
 
-## baseline (rth_end exit, 2R) — config 7192a5a156a1
+## baseline (rth_end exit, 2R) — config ba4e1a50ed49
 
 5 trades, 3 unfilled orders in 2024-07
 
@@ -153,7 +153,7 @@ Prices are back-adjusted (unadjusted close shown for basis). Bars listed from 3 
 - bars until window end: 10; closest approach +15.25 pts from the limit; stop would have been 21742.75, target 21680.5
 
 
-## variant (window_end exit, 2R) — time-exit mechanics — config 7829c7d17950
+## variant (window_end exit, 2R) — time-exit mechanics — config 0ef99cf07caa
 
 5 trades, 3 unfilled orders in 2024-07
 

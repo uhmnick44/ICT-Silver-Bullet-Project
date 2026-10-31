@@ -1,0 +1,136 @@
+{
+  "generated_utc": "2026-10-31T18:28:50.705572+00:00",
+  "config_name": "as_traded",
+  "layer3_config_hash": "87adccbbe8e9cf9b7a101672cfa1c09498fb535a991ace97ff4d6d539d56840e",
+  "layer3_config": {
+    "series_id": "mnq_volcross_next_session_backadj_v1",
+    "layer2_config": "configs/layer2_features.toml",
+    "meta": {
+      "name": "as_traded",
+      "description": "ICT Silver Bullet as traded: 1m FVG, no bias, session refs plus 15m swings, displacement 1.5 ATR, fixed 2R, unlimited trades per window (hard cap 10)",
+      "stop_substitution_note": "Original methodology: stop beyond the displacement swing. That structural definition is unresolved; displacement_candle_extreme (one tick beyond the latest qualifying displacement candle extreme) is a documented substitution, not a replication of the original stop.",
+      "research_baseline": true
+    },
+    "signal": {
+      "windows": [
+        "sb_london",
+        "sb_ny_am",
+        "sb_ny_pm"
+      ],
+      "liquidity_universe": "session_refs_plus_swings",
+      "liquidity_types": [
+        "prev_session",
+        "prev_rth",
+        "prewindow",
+        "swing_15m"
+      ],
+      "fvg_timeframe": "1m",
+      "min_fvg_points": 0.0,
+      "min_fvg_atr": 0.0,
+      "require_mss": false,
+      "require_displacement": true,
+      "displacement_threshold": 1.5,
+      "bias_detector": "none",
+      "require_bias": false,
+      "require_penetration_in_window": false,
+      "max_trades_per_window": "unlimited",
+      "pending_order_policy": "keep_first"
+    },
+    "entry": {
+      "location": "midpoint",
+      "fill_rule": "trade_through",
+      "marketable_at_activation": "fill_at_limit",
+      "expiry": "window_end",
+      "round_midpoint": "away_from_proximal"
+    },
+    "stop": {
+      "type": "displacement_candle_extreme",
+      "buffer_ticks": 1,
+      "fixed_points": 20.0
+    },
+    "target": {
+      "type": "fixed_r",
+      "r_multiple": 2.0,
+      "opposing_liquidity_types": [
+        "prev_session",
+        "prev_rth",
+        "prewindow",
+        "swing_15m"
+      ],
+      "fallback": "fixed_r",
+      "fallback_r_multiple": 2.0,
+      "fill_rule": "trade_through"
+    },
+    "exit": {
+      "policy": "rth_end",
+      "same_bar_rule": "stop_first",
+      "time_exit_price": "next_bar_open"
+    },
+    "costs": {
+      "commission_per_side": 0.39,
+      "exchange_fee_per_side": 0.36,
+      "clearing_fee_per_side": 0.19,
+      "entry_slippage_ticks": 0,
+      "target_slippage_ticks": 0,
+      "stop_slippage_ticks": 1,
+      "time_exit_slippage_ticks": 1
+    },
+    "sizing": {
+      "contracts": 1
+    },
+    "roll": {
+      "policy": "flag_and_exclude"
+    }
+  },
+  "counts": {
+    "eligible_windows": 1567,
+    "qualifying_setups": 1526,
+    "submitted_orders": 623,
+    "filled_trades": 463,
+    "canceled_orders": 160
+  },
+  "layer2_config_hash": "fa39a59e50755201f3249921087401006a6bc058f1c9e285771f886f1de01dc2",
+  "layer1_config_hash": "06eb8453396d521786b22379b0f35470a0527a228d760c76071fef6edbd046e5",
+  "layer1_backadjusted_content_hash": "159055aaa2fd877d3f375c811b7c6d142fb74b66155b131c8d3bed47baf89578",
+  "series_id": "mnq_volcross_next_session_backadj_v1",
+  "feature_source": "cache:/home/user/ICT-Silver-Bullet-Project/ict_lab/runs/features/mnq_volcross_next_session_backadj_v1/fa39a59e5075",
+  "holdout_accessed": false,
+  "development_range": [
+    "2022-10-03",
+    "2024-10-18"
+  ],
+  "trades": 463,
+  "trades_content_hash": "1d5ae00c42795b71138a7cf73e9a32c36d6522e5e4e44d5b6ab0eab0af5e9b08",
+  "no_trade_windows": 1152,
+  "no_trade_content_hash": "10c6cd1c23f981826cc9f4d8f76d29d358f1ecab94059adadf887415be4dfcef",
+  "gate_failure_counts": {
+    "sweep": 508,
+    "displacement": 223,
+    "stop": 203,
+    "entry_fill": 145,
+    "fvg": 48,
+    "window_eligible": 23,
+    "position_free": 2
+  },
+  "roll_exclusions": {
+    "policy": "flag_and_exclude",
+    "trades_spanning_roll": 0,
+    "trades_excluded": 0,
+    "reasons": {}
+  },
+  "trades_included": 463,
+  "exit_reason_counts": {
+    "stop": 306,
+    "target": 154,
+    "time_exit_rth": 3
+  },
+  "software": {
+    "python": "3.13.17",
+    "platform": "Linux-6.18.44-fc-v185-x86_64-with-glibc2.39",
+    "pandas": "3.0.5",
+    "numpy": "2.5.3",
+    "pyarrow": "26.0.0",
+    "databento": "0.89.0"
+  },
+  "elapsed_seconds": 8.27
+}

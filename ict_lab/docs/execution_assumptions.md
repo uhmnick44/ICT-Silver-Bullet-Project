@@ -138,3 +138,38 @@ These are documented implementation decisions of this lab, not verified rules of
 1. `displacement_swing` stop: definition of a confirmed structural swing associated with displacement.
 2. Rollover handling for positions held across a roll (only reachable with `exit.policy = hold`);
    such trades are excluded until a policy is approved.
+
+## Layer 4 — multi-trade windows, multiple windows, named configurations
+
+- Trade allowance per window: `signal.max_trades_per_window` is an integer in [1, 10] or `"unlimited"`,
+  which applies the hard safety cap of 10 (`HARD_TRADE_CAP`). Each (trading date, window) has its own
+  allowance; a position is never duplicated because several windows are registered.
+- Setup enumeration (`signals.build_setups`): every confirmed sweep in the window yields at most one
+  qualifying setup (its first eligible direction-matching FVG after the required gates). Setups are
+  ordered by (setup timestamp, sweep confirmation, sweep id) — a deterministic tie-break that uses
+  nothing after the setup's own confirmation.
+- Submission rules, applied in setup order: trade allowance not exhausted → no open position (the new
+  setup's activation bar must be strictly after the previous exit bar) → no pending order
+  (`pending_order_policy = keep_first`: an unfilled order blocks newer setups until it fills or expires
+  at the window end) → the sweep and the FVG have not already produced an order (no reuse of a consumed
+  level or an executed setup). Rejections are logged per setup with their reason
+  (`trade_cap_reached`, `position_open`, `order_pending`, `duplicate_setup`); execution-gate rejections
+  (`stop`, `target`) are counted separately from submitted orders.
+- Counters per window (`window_stats.csv`): qualifying setups, submitted orders, filled trades, canceled
+  orders (expired unfilled; they do not consume a filled-trade allowance), execution-gate rejections and
+  each blocking reason. `setup_log.csv` records every setup with a unique `setup_id`
+  (`date:window:s<sweep_id>:<fvg_id>`) and its outcome. Setup ids are stable for a given feature run;
+  Layer 2 sweep ids can renumber when features are recomputed on a prefix, so cross-run comparisons use
+  feature content, not ids.
+- Overlap across windows: one open position at any time; a position held past its window (e.g. a
+  London trade under `rth_end`) blocks later windows that day (`position_free` gate).
+- Named liquidity universes (`LIQUIDITY_UNIVERSES`): `session_refs`, `session_refs_plus_swings`,
+  `bsl_ssl_15m`, `swings_only` (alias). A named universe sets both the sweep references and the
+  opposing-liquidity target references; the schema rejects any mismatch and any 1m swing type.
+- Named configurations (`configs/strategies/*.toml`, `load_named_config`): `as_taught_5m`,
+  `as_taught_1m`, `as_traded` as specified in the Layer 4 brief. ASSUMPTION: the original exit policy is
+  unspecified; all three use `rth_end`. All three carry `meta.stop_substitution_note`: the original
+  "beyond displacement swing" stop is unresolved, so `displacement_candle_extreme` is a documented
+  substitution, not a replication of the original stop.
+- Frequency diagnostics (`analysis/frequency.py`) report signal, order and fill frequency only; the
+  module asserts that no P&L, win-rate, Sharpe, profit-factor, expectancy or drawdown column exists.

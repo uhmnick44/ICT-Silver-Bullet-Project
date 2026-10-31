@@ -17,3 +17,5 @@ ict_lab/runs/pipeline_run_*.json
 ict_lab/runs/features/**/*.parquet
 ict_lab/runs/features_full_run.log
 ict_lab/runs/backtests/**/*.parquet
+ict_lab/runs/backtests/**/setup_log.csv
+ict_lab/runs/backtests/**/window_stats.csv

@@ -98,20 +98,29 @@ def prepare_tables(feats: dict, cfg: SignalConfig) -> SignalTables:
 
 
 def build_setup(w: pd.Series, tables: SignalTables, cfg: SignalConfig) -> tuple[Setup | None, dict]:
-    """Returns (setup or None, diagnostic). The diagnostic names the first failed gate of the attempt
-    that progressed furthest through the sequence."""
+    """First qualifying setup of the window (Layer 3 behaviour). See build_setups for the full list."""
+    setups, diag = build_setups(w, tables, cfg)
+    return (setups[0] if setups else None), diag
+
+
+def build_setups(w: pd.Series, tables: SignalTables, cfg: SignalConfig) -> tuple[list[Setup], dict]:
+    """All qualifying setups of the window, one per confirmed sweep (its first eligible direction-matching
+    FVG), sorted deterministically by (setup_ts, sweep confirmation, sweep_id). Nothing after a setup's
+    own setup_ts is used to rank it. The diagnostic names the first failed gate of the attempt that
+    progressed furthest when no setup qualifies."""
     start, end = pd.Timestamp(w["start_ts_utc"]), pd.Timestamp(w["end_ts_utc"])
     diag = {"trading_date": w["trading_date"], "window": w["window"], "gate_failed": None, "reason": None, "sweeps_examined": 0}
     if not bool(w["eligible"]):
-        diag.update(gate_failed="window_eligible", reason=w["exclusion_reasons"]); return None, diag
+        diag.update(gate_failed="window_eligible", reason=w["exclusion_reasons"]); return [], diag
     bias = tables.bias.get((pd.Timestamp(w["trading_date"]), w["window"]), "none") if cfg.bias_detector != "none" else "none"
     if cfg.bias_detector != "none" and cfg.require_bias and bias == "none":
-        diag.update(gate_failed="bias", reason="no_bias"); return None, diag
+        diag.update(gate_failed="bias", reason="no_bias"); return [], diag
     sweeps = tables.sweeps.between(start, end)
     if cfg.require_penetration_in_window and len(sweeps):
         sweeps = sweeps[sweeps["penetration_ts_utc"] >= start]
     if len(sweeps) == 0:
-        diag.update(gate_failed="sweep", reason="no_confirmed_sweep_in_window"); return None, diag
+        diag.update(gate_failed="sweep", reason="no_confirmed_sweep_in_window"); return [], diag
+    setups: list[Setup] = []
     best_gate, best_reason = -1, None
     def fail(gate_idx, reason):
         nonlocal best_gate, best_reason
@@ -163,8 +172,11 @@ def build_setup(w: pd.Series, tables: SignalTables, cfg: SignalConfig) -> tuple[
                       stop_ref_displacement_timeframe=str(ref_row["timeframe"]) if ref_row is not None else None,
                       stop_ref_displacement_ratio=float(ref_row["range_atr_ratio"]) if ref_row is not None else None)
         assert setup.setup_ts_utc >= setup.sweep_confirmation_ts_utc and setup.setup_ts_utc >= setup.fvg_confirmation_ts_utc
-        diag.update(sweeps_examined=n)
-        return setup, diag
+        setups.append(setup)
+    diag.update(sweeps_examined=len(sweeps))
+    if setups:
+        setups.sort(key=lambda x: (x.setup_ts_utc, x.sweep_confirmation_ts_utc, x.sweep_id))
+        return setups, diag
     gate = ("bias", "mss", "displacement", "fvg")[best_gate] if best_gate >= 0 else "sweep"
-    diag.update(gate_failed=gate, reason=best_reason, sweeps_examined=len(sweeps))
-    return None, diag
+    diag.update(gate_failed=gate, reason=best_reason)
+    return [], diag

@@ -24,12 +24,16 @@ NY = "America/New_York"
 BASELINE = "ict_lab/configs/baseline_verification.toml"
 
 
+WINDOW_END_HOUR = {"sb_london": 4, "sb_ny_am": 11, "sb_ny_pm": 15}
+
+
 def naive_replay(bars: pd.DataFrame, t: pd.Series, policy: str) -> dict:
     """Independent re-derivation: scan the bars after order activation with plain Python."""
     bull = t["direction"] == "bullish"; lim, stop, tgt = t["entry_limit"], t["stop_price"], t["target_price"]
     rows = bars[(bars["ts_utc"] >= t["order_active_ts_utc"])]
-    end = t["setup_ts_utc"].tz_convert(NY).normalize() + pd.Timedelta(hours=11)
-    rth = t["setup_ts_utc"].tz_convert(NY).normalize() + pd.Timedelta(hours=16)
+    day = t["setup_ts_utc"].tz_convert(NY).normalize()
+    end = day + pd.Timedelta(hours=WINDOW_END_HOUR.get(t.get("window", "sb_ny_am"), 11))
+    rth = day + pd.Timedelta(hours=16)
     fill = None
     for r in rows.itertuples():
         if r.ts_ny >= end:
@@ -44,7 +48,7 @@ def naive_replay(bars: pd.DataFrame, t: pd.Series, policy: str) -> dict:
         if r.ts_ny >= horizon:
             out.update(exit_ts=r.ts_utc, reason="time", exit_theo=r.open); return out
         s_hit = (r.low <= stop) if bull else (r.high >= stop)
-        t_hit = (r.high > tgt) if bull else (r.low < tgt)
+        t_hit = False if pd.isna(tgt) else ((r.high > tgt) if bull else (r.low < tgt))
         if s_hit:
             gap = (r.open < stop) if bull else (r.open > stop)
             out.update(exit_ts=r.ts_utc, reason="stop", exit_theo=(r.open if gap else stop), ambiguous=bool(t_hit)); return out
