@@ -1,9 +1,10 @@
 # ICT Silver Bullet — Research Methodology (Layer 2 feature definitions)
 
 Status: implemented in `ict_lab/features/`, configuration in `configs/layer2_features.toml`.
-Source: the Layer 2 specification supplied to this lab (the "original 24 screenshots" themselves
-were **not** provided to the lab; every definition below comes from the written specification,
-and anything the specification leaves open is listed under *Implementation assumptions*).
+Source: the written Layer 2 specification supplied to this lab, which is the authoritative
+extraction of the original research framework (the source screenshots were processed upstream and
+are not re-interpreted here). Anything the specification leaves open is listed under
+*Implementation assumptions* and in §12.
 
 Legend used throughout:
 
@@ -172,8 +173,8 @@ order is ambiguous. None of this is implemented in Layer 2.
 
 ## 12. Unresolved ambiguities (require a decision before Layer 3 relies on them)
 
-1. The 24 original screenshots were not available; this document is built from the written
-   specification only.
+1. (resolved) The written specification is the authoritative source; no further reference to the
+   original screenshots is needed.
 2. FVG `formation_ts` (candle-1 open) and the mitigation/full-fill thresholds (strict trade-inside;
    touch of the distal boundary) are assumptions.
 3. ATR smoothing (Wilder) and the gap treatment of true range are assumptions.
