@@ -22,12 +22,15 @@ ict_lab/
 │   ├── manifest.json            # source/config/output hashes + software versions
 │   └── reports/                 # contract_roll_report.md, data_quality_report.md/json,
 │                                #   session_coverage_report.md/csv, gaps.csv, discontinuities.csv
-├── engine/                      # config, instrument, sessions, ingest, rolls, continuous, quality, pipeline, loader, manifest
+├── engine/                      # Layer 1: config, instrument, sessions, ingest, rolls, continuous, quality, pipeline, loader, manifest
+│                                # Layer 3: exec_config, signals, execution, backtest
 ├── analysis/roll_chart.py       # chart verification around rolls;  analysis/layer1_summary.py
 ├── analysis/feature_charts.py   # Layer 2: 15 seeded development-period feature verification charts
 ├── features/                    # Layer 2: series registry, timeframes, atr, swings, fvg, liquidity, sweeps,
 │                                #   displacement, mss, bias, windows, config, run
-├── docs/silver_bullet_methodology.md   # Layer 2 feature definitions, parameters, assumptions, ambiguities
+├── docs/silver_bullet_methodology.md   # Layer 2 feature definitions, parameters, approved decisions
+├── docs/execution_assumptions.md       # Layer 3 execution rules, costs, price basis, open items
+├── docs/manual_verification_layer3.md  # Layer 3 one-month manual verification sample
 ├── runs/                        # pipeline run logs, holdout_access.log, roll_charts/
 └── tests/                       # pytest suite (Layer 1 test_0*.py, Layer 2 test_l2_*.py)
 ```
@@ -174,3 +177,23 @@ Rules enforced in code: approved liquidity universe only (no 1-minute swing liqu
 features confirm only after their candle closes; no forward-filling; `consecutive_prev` guards against
 treating gaps as adjacent bars; lookahead "perfect bias" diagnostics are isolated behind an explicit flag
 and rejected by validated research configs; detectors are series-agnostic (`features/series.py`).
+
+
+## Layer 3 — deterministic execution and backtesting
+
+Rules and assumptions: `docs/execution_assumptions.md`. Configuration: `configs/layer3_execution.toml`
+(defaults) and `configs/baseline_verification.toml` (engine-verification baseline, not a strategy).
+
+```bash
+python -m ict_lab.engine.backtest --config ict_lab/configs/baseline_verification.toml
+python -m ict_lab.analysis.manual_verification --month 2024-07
+python -m pytest ict_lab/tests -k l3
+```
+
+Outputs land in `runs/backtests/<config_hash[:12]>/`: `trades.parquet/csv`, `no_trade_log.csv` (first failed
+gate per window) and `backtest_manifest.json` (Layer 1/2/3 hashes, feature source, `holdout_accessed: false`,
+content hashes). The signal sequence consumes Layer 2 tables unchanged; the engine uses NumPy arrays and
+cached feature tables (cached and recomputed features give identical trades, tested).
+
+The `displacement_swing` stop is blocked in the config schema until a swing-selection rule is approved;
+the baseline runs with the FVG-distal stop as a labelled provisional stand-in.

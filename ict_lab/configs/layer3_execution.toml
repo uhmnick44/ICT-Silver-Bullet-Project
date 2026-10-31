@@ -1,0 +1,61 @@
+# Layer 3 — execution / backtest configuration (defaults). Hashed into every trade log.
+# FIXED = methodology requirement; APPROVED = approved implementation choice; PARAM = research parameter;
+# ASSUMPTION = execution choice not fixed by the specification (listed in docs/execution_assumptions.md).
+
+[series]
+series_id = "mnq_volcross_next_session_backadj_v1"
+layer2_config = "configs/layer2_features.toml"      # feature definitions are NOT re-derived here
+
+[signal]
+windows = ["sb_london", "sb_ny_am", "sb_ny_pm"]      # windows processed (FIXED set, subset selectable)
+liquidity_types = ["prev_session", "prev_rth", "prewindow", "swing_15m"]   # subset of the approved universe only
+fvg_timeframe = "5m"                                 # PARAM: 1m | 5m | 15m
+min_fvg_points = 0.0                                 # PARAM
+min_fvg_atr = 0.0                                    # PARAM
+require_mss = false                                  # PARAM
+require_displacement = false                         # PARAM
+displacement_threshold = 1.5                         # PARAM: range / ATR(14) of the prior candle
+bias_detector = "none"                               # none | prev_day_oc | swing_15m_structure | swing_1h_structure | daily_ma20_slope
+require_bias = false                                 # if true, bias "none" blocks the window
+require_penetration_in_window = false                # ASSUMPTION: sweep confirmation must be inside the window; penetration may precede it
+max_trades_per_window = 1                            # FIXED for Layer 3
+
+[entry]
+location = "midpoint"                                # proximal | midpoint | distal (FVG limit)
+fill_rule = "trade_through"                          # FIXED: strictly through the limit (touch is not a fill)
+marketable_at_activation = "fill_at_limit"           # APPROVED/ASSUMPTION: fill at the limit price, flagged (never better than limit)
+expiry = "window_end"                                # FIXED: unfilled orders cancelled when the window closes
+round_midpoint = "away_from_proximal"                # ASSUMPTION: off-grid midpoint rounds deeper into the gap
+
+[stop]
+type = "fvg_distal"                                  # displacement_swing | fvg_distal | fixed_points  (displacement_swing: see docs — awaiting definition)
+buffer_ticks = 1                                     # PARAM: structure stops are placed this many ticks beyond the structure
+fixed_points = 20.0                                  # PARAM (used only for fixed_points)
+
+[target]
+type = "fixed_r"                                     # fixed_r | opposing_liquidity | time_only
+r_multiple = 2.0                                     # PARAM (1, 2, 3 supported; any positive value accepted)
+opposing_liquidity_types = ["prev_session", "prev_rth", "prewindow", "swing_15m"]   # approved universe only
+fallback = "fixed_r"                                 # when no eligible opposing level exists (recorded on the trade)
+fallback_r_multiple = 2.0
+fill_rule = "trade_through"                          # ASSUMPTION: profit-target limit also needs a strict trade-through ("touch" available)
+
+[exit]
+policy = "rth_end"                                   # window_end | rth_end | hold   (hold = until stop/target; roll-spanning flagged)
+same_bar_rule = "stop_first"                         # FIXED: stop executes first when a bar reaches both
+time_exit_price = "next_bar_open"                    # FIXED: first executable price after the condition is known
+
+[costs]
+commission_per_side = 0.39                           # project modelling assumptions, not verified broker rates
+exchange_fee_per_side = 0.36
+clearing_fee_per_side = 0.19
+entry_slippage_ticks = 0
+target_slippage_ticks = 0
+stop_slippage_ticks = 1                              # adverse; sensitivity 0/1/2/3 supported
+time_exit_slippage_ticks = 1                         # ASSUMPTION: market exits take 1 adverse tick
+
+[sizing]
+contracts = 1                                        # PARAM (never assumed)
+
+[roll]
+policy = "flag_and_exclude"                          # flag_and_exclude | flag_only : trades whose holding period crosses a roll

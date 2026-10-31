@@ -1,0 +1,61 @@
+# ENGINE VERIFICATION BASELINE (Layer 3 §12). Not a recommended or optimised strategy.
+# Deviation from §12: stop.type should be "displacement_swing"; that swing is not defined by the Layer 2
+# feature metadata, so this file uses "fvg_distal" as an explicitly labelled PROVISIONAL stand-in until
+# the swing-selection rule is approved. Everything else matches §12.
+[series]
+series_id = "mnq_volcross_next_session_backadj_v1"
+layer2_config = "configs/layer2_features.toml"
+
+[signal]
+windows = ["sb_ny_am"]
+liquidity_types = ["prev_session", "prewindow"]
+fvg_timeframe = "5m"
+min_fvg_points = 0.0
+min_fvg_atr = 0.0
+require_mss = false
+require_displacement = true
+displacement_threshold = 1.5
+bias_detector = "none"
+require_bias = false
+require_penetration_in_window = false
+max_trades_per_window = 1
+
+[entry]
+location = "midpoint"
+fill_rule = "trade_through"
+marketable_at_activation = "fill_at_limit"
+expiry = "window_end"
+round_midpoint = "away_from_proximal"
+
+[stop]
+type = "fvg_distal"            # PROVISIONAL stand-in for displacement_swing (see header)
+buffer_ticks = 1
+fixed_points = 20.0
+
+[target]
+type = "fixed_r"
+r_multiple = 2.0
+opposing_liquidity_types = ["prev_session", "prewindow"]
+fallback = "fixed_r"
+fallback_r_multiple = 2.0
+fill_rule = "trade_through"
+
+[exit]
+policy = "rth_end"
+same_bar_rule = "stop_first"
+time_exit_price = "next_bar_open"
+
+[costs]
+commission_per_side = 0.39
+exchange_fee_per_side = 0.36
+clearing_fee_per_side = 0.19
+entry_slippage_ticks = 0
+target_slippage_ticks = 0
+stop_slippage_ticks = 1
+time_exit_slippage_ticks = 1
+
+[sizing]
+contracts = 1
+
+[roll]
+policy = "flag_and_exclude"
