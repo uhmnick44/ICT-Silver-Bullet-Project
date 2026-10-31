@@ -11,7 +11,7 @@ from ..features.config import LIQUIDITY_TYPES, LOOKAHEAD_BIAS, VALID_BIAS
 
 LAB_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_L3_CONFIG = LAB_ROOT / "configs" / "layer3_execution.toml"
-STOP_TYPES = ("displacement_swing", "fvg_distal", "fixed_points")
+STOP_TYPES = ("displacement_candle_extreme", "displacement_swing", "fvg_distal", "fixed_points")
 TARGET_TYPES = ("fixed_r", "opposing_liquidity", "time_only")
 EXIT_POLICIES = ("window_end", "rth_end", "hold")
 ENTRY_LOCATIONS = ("proximal", "midpoint", "distal")

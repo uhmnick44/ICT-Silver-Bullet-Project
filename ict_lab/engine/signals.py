@@ -50,6 +50,12 @@ class Setup:
     fvg_midpoint: float
     setup_ts_utc: pd.Timestamp
     attempts: int = 0                   # sweeps examined before this one qualified
+    # stop reference (approved decision, Layer 3 ambiguity resolution 1): the LATEST qualifying direction-matching
+    # displacement candle confirmed after the sweep confirmation and no later than the FVG confirmation; frozen here.
+    stop_ref_displacement_ts_utc: pd.Timestamp | None = None
+    stop_ref_displacement_confirmation_ts_utc: pd.Timestamp | None = None
+    stop_ref_displacement_timeframe: str | None = None
+    stop_ref_displacement_ratio: float | None = None
 
 
 class SortedTable:
@@ -135,6 +141,10 @@ def build_setup(w: pd.Series, tables: SignalTables, cfg: SignalConfig) -> tuple[
         if len(f) == 0:
             fail(3, "no_direction_matching_fvg_before_window_end"); continue
         fv = f.iloc[0]
+        fv_conf = pd.Timestamp(fv["confirmation_ts_utc"])
+        ref = tables.displacement.between(pd.Timestamp(s.confirmation_ts_utc), fv_conf + pd.Timedelta(nanoseconds=1))
+        ref = ref[ref["direction"] == direction]
+        ref_row = ref.iloc[-1] if len(ref) else None
         setup = Setup(trading_date=pd.Timestamp(w["trading_date"]), window=w["window"], window_start_utc=start, window_end_utc=end,
                       direction=direction, bias=bias, sweep_id=int(s.sweep_id), level_type=s.level_type, level_price=float(s.level_price),
                       sweep_penetration_ts_utc=pd.Timestamp(s.penetration_ts_utc), sweep_confirmation_ts_utc=pd.Timestamp(s.confirmation_ts_utc),
@@ -147,7 +157,11 @@ def build_setup(w: pd.Series, tables: SignalTables, cfg: SignalConfig) -> tuple[
                       displacement_ratio=float(disp_row["range_atr_ratio"]) if disp_row is not None else None,
                       fvg_id=fv["fvg_id"], fvg_timeframe=fv["timeframe"], fvg_confirmation_ts_utc=pd.Timestamp(fv["confirmation_ts_utc"]),
                       fvg_upper=float(fv["upper"]), fvg_lower=float(fv["lower"]), fvg_midpoint=float(fv["midpoint"]),
-                      setup_ts_utc=max(t, pd.Timestamp(fv["confirmation_ts_utc"])), attempts=n)
+                      setup_ts_utc=max(t, fv_conf), attempts=n,
+                      stop_ref_displacement_ts_utc=pd.Timestamp(ref_row["ts_utc"]) if ref_row is not None else None,
+                      stop_ref_displacement_confirmation_ts_utc=pd.Timestamp(ref_row["confirmation_ts_utc"]) if ref_row is not None else None,
+                      stop_ref_displacement_timeframe=str(ref_row["timeframe"]) if ref_row is not None else None,
+                      stop_ref_displacement_ratio=float(ref_row["range_atr_ratio"]) if ref_row is not None else None)
         assert setup.setup_ts_utc >= setup.sweep_confirmation_ts_utc and setup.setup_ts_utc >= setup.fvg_confirmation_ts_utc
         diag.update(sweeps_examined=n)
         return setup, diag

@@ -124,10 +124,10 @@
       "2025-09-24"
     ]
   },
-  "elapsed_seconds": 57.0,
+  "elapsed_seconds": 53.5,
   "first_bar_ny": "2022-10-02 18:00:00-04:00",
   "first_bar_utc": "2022-10-02 22:00:00+00:00",
-  "generated_utc": "2026-10-31T04:06:38.030335+00:00",
+  "generated_utc": "2026-10-31T04:23:03.857159+00:00",
   "jobs": {
     "GLBX-20261021-5QBR9J5GST": {
       "customizations": {

@@ -1,0 +1,113 @@
+{
+  "generated_utc": "2026-10-31T04:20:04.753995+00:00",
+  "layer3_config_hash": "7192a5a156a19a05de43faa7cea0d9510faead060af6b3225e6f77d9ae948273",
+  "layer3_config": {
+    "series_id": "mnq_volcross_next_session_backadj_v1",
+    "layer2_config": "configs/layer2_features.toml",
+    "signal": {
+      "windows": [
+        "sb_ny_am"
+      ],
+      "liquidity_types": [
+        "prev_session",
+        "prewindow"
+      ],
+      "fvg_timeframe": "5m",
+      "min_fvg_points": 0.0,
+      "min_fvg_atr": 0.0,
+      "require_mss": false,
+      "require_displacement": true,
+      "displacement_threshold": 1.5,
+      "bias_detector": "none",
+      "require_bias": false,
+      "require_penetration_in_window": false,
+      "max_trades_per_window": 1
+    },
+    "entry": {
+      "location": "midpoint",
+      "fill_rule": "trade_through",
+      "marketable_at_activation": "fill_at_limit",
+      "expiry": "window_end",
+      "round_midpoint": "away_from_proximal"
+    },
+    "stop": {
+      "type": "displacement_candle_extreme",
+      "buffer_ticks": 1,
+      "fixed_points": 20.0
+    },
+    "target": {
+      "type": "fixed_r",
+      "r_multiple": 2.0,
+      "opposing_liquidity_types": [
+        "prev_session",
+        "prewindow"
+      ],
+      "fallback": "fixed_r",
+      "fallback_r_multiple": 2.0,
+      "fill_rule": "trade_through"
+    },
+    "exit": {
+      "policy": "rth_end",
+      "same_bar_rule": "stop_first",
+      "time_exit_price": "next_bar_open"
+    },
+    "costs": {
+      "commission_per_side": 0.39,
+      "exchange_fee_per_side": 0.36,
+      "clearing_fee_per_side": 0.19,
+      "entry_slippage_ticks": 0,
+      "target_slippage_ticks": 0,
+      "stop_slippage_ticks": 1,
+      "time_exit_slippage_ticks": 1
+    },
+    "sizing": {
+      "contracts": 1
+    },
+    "roll": {
+      "policy": "flag_and_exclude"
+    }
+  },
+  "layer2_config_hash": "fa39a59e50755201f3249921087401006a6bc058f1c9e285771f886f1de01dc2",
+  "layer1_config_hash": "06eb8453396d521786b22379b0f35470a0527a228d760c76071fef6edbd046e5",
+  "layer1_backadjusted_content_hash": "159055aaa2fd877d3f375c811b7c6d142fb74b66155b131c8d3bed47baf89578",
+  "series_id": "mnq_volcross_next_session_backadj_v1",
+  "feature_source": "cache:/home/user/ICT-Silver-Bullet-Project/ict_lab/runs/features/mnq_volcross_next_session_backadj_v1/fa39a59e5075",
+  "holdout_accessed": false,
+  "development_range": [
+    "2022-10-03",
+    "2024-10-18"
+  ],
+  "trades": 36,
+  "trades_content_hash": "9d065ed3636210c93bb1aa23f0880348a520fe4ba2e1e49c6b9361f527105477",
+  "no_trade_windows": 494,
+  "no_trade_content_hash": "794bac698c7d47cad0e37c2458d42691d3b393041c005343583bb551c9bbd7d8",
+  "gate_failure_counts": {
+    "sweep": 281,
+    "fvg": 80,
+    "displacement": 66,
+    "stop": 48,
+    "entry_fill": 17,
+    "window_eligible": 2
+  },
+  "roll_exclusions": {
+    "policy": "flag_and_exclude",
+    "trades_spanning_roll": 0,
+    "trades_excluded": 0,
+    "reasons": {}
+  },
+  "trades_included": 36,
+  "exit_reason_counts": {
+    "stop": 18,
+    "target": 16,
+    "time_exit_rth": 2
+  },
+  "software": {
+    "python": "3.13.17",
+    "platform": "Linux-6.18.44-fc-v185-x86_64-with-glibc2.39",
+    "pandas": "3.0.5",
+    "numpy": "2.5.3",
+    "pyarrow": "26.0.0",
+    "databento": "0.89.0"
+  },
+  "elapsed_seconds": 1.34
+}

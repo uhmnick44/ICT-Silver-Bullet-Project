@@ -28,8 +28,8 @@ expiry = "window_end"                                # FIXED: unfilled orders ca
 round_midpoint = "away_from_proximal"                # ASSUMPTION: off-grid midpoint rounds deeper into the gap
 
 [stop]
-type = "fvg_distal"                                  # displacement_swing | fvg_distal | fixed_points  (displacement_swing: see docs — awaiting definition)
-buffer_ticks = 1                                     # PARAM: structure stops are placed this many ticks beyond the structure
+type = "fvg_distal"                                  # displacement_candle_extreme | fvg_distal | fixed_points | displacement_swing (unresolved, blocked)
+buffer_ticks = 1                                     # PARAM: structure stops are placed this many ticks beyond the reference (APPROVED default 1)
 fixed_points = 20.0                                  # PARAM (used only for fixed_points)
 
 [target]
@@ -52,10 +52,10 @@ clearing_fee_per_side = 0.19
 entry_slippage_ticks = 0
 target_slippage_ticks = 0
 stop_slippage_ticks = 1                              # adverse; sensitivity 0/1/2/3 supported
-time_exit_slippage_ticks = 1                         # ASSUMPTION: market exits take 1 adverse tick
+time_exit_slippage_ticks = 1                         # APPROVED baseline assumption: market exits take 1 adverse tick (configurable)
 
 [sizing]
 contracts = 1                                        # PARAM (never assumed)
 
 [roll]
-policy = "flag_and_exclude"                          # flag_and_exclude | flag_only : trades whose holding period crosses a roll
+policy = "flag_and_exclude"                          # APPROVED default: trades whose holding period crosses a roll are flagged and excluded

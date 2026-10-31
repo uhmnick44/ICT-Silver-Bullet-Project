@@ -204,3 +204,53 @@ def test_opposing_liquidity_target_uses_only_known_active_levels(sessions, spec)
     assert t == 103.5                                                            # expired
     t, _, _ = target_price(s, 101.0, 1.25, c, spec, lv([mk(98.0, "2024-05-15 09:30", ltype="prev_session_low", side="sellside")]))
     assert t == 103.5                                                            # wrong side
+
+
+# ----------------------------------------------------------------------------- displacement_candle_extreme (approved stop mode)
+def test_displacement_candle_extreme_stop_long_and_short(sessions, spec):
+    from ict_lab.engine.execution import displacement_candle_extreme
+    # 1m displacement candle at 10:06 with low 97.5 (bullish setup) -> stop 97.25; FVG 100-102, entry 101, risk 3.75, 2R target 108.5
+    ohlc = [FLAT] * 6 + [(98.0, 104.0, 97.5, 103.5)] + [FLAT] * 5 + [FILL] + [FLAT] * 400
+    s = make_setup()
+    s.stop_ref_displacement_ts_utc = ts("2024-05-15 10:06"); s.stop_ref_displacement_confirmation_ts_utc = ts("2024-05-15 10:07"); s.stop_ref_displacement_timeframe = "1m"
+    b = arrays(sessions, "2024-05-15 10:00", ohlc)
+    assert displacement_candle_extreme(s, b) == (97.5, "ok")
+    c = cfg(stop=StopConfig(type="displacement_candle_extreme", buffer_ticks=1))
+    tr, _ = simulate(s, b, c, spec, None, ts("2024-05-15 16:00"), NOROLL)
+    assert tr["stop_price"] == 97.25 and tr["planned_risk_points"] == 3.75 and tr["target_price"] == 108.5 and tr["stop_type"] == "displacement_candle_extreme"
+    assert tr["stop_ref_displacement_ts_utc"] == ts("2024-05-15 10:06")
+    sb = make_setup(direction="bearish", upper=102.0, lower=100.0)   # entry = midpoint rounded up = 101.0
+    sb.stop_ref_displacement_ts_utc = ts("2024-05-15 10:06"); sb.stop_ref_displacement_confirmation_ts_utc = ts("2024-05-15 10:07"); sb.stop_ref_displacement_timeframe = "1m"
+    assert displacement_candle_extreme(sb, b) == (104.0, "ok")
+    st, why = stop_price(sb, 101.0, c, spec, b)
+    assert st == 104.25 and why == "ok"
+
+
+def test_displacement_candle_extreme_uses_candle_bucket_for_htf(sessions, spec):
+    from ict_lab.engine.execution import displacement_candle_extreme
+    # 5m candle 10:05-10:09: lows 99, 97.5, 98, 99, 99 -> extreme 97.5
+    ohlc = [FLAT] * 5 + [(100, 101, 99, 100), (100, 101, 97.5, 100), (100, 101, 98, 100), (100, 101, 99, 100), (100, 101, 99, 100)] + [FLAT] * 60
+    s = make_setup(); s.stop_ref_displacement_ts_utc = ts("2024-05-15 10:05"); s.stop_ref_displacement_confirmation_ts_utc = ts("2024-05-15 10:10"); s.stop_ref_displacement_timeframe = "5m"
+    assert displacement_candle_extreme(s, arrays(sessions, "2024-05-15 10:00", ohlc)) == (97.5, "ok")
+
+
+def test_displacement_candle_extreme_rejects_without_substitution(sessions, spec):
+    c = cfg(stop=StopConfig(type="displacement_candle_extreme", buffer_ticks=1))
+    # no stop-reference candle between sweep and FVG confirmation
+    s = make_setup()
+    tr, nd = run(sessions, spec, [FLAT] * 70, c=c, setup=s)
+    assert tr is None and nd["gate_failed"] == "stop" and nd["reason"] == "no_displacement_candle_between_sweep_and_fvg"
+    # candle extreme on the wrong side of the entry -> non-positive distance -> rejected
+    ohlc = [FLAT] * 6 + [(103.0, 106.0, 102.5, 105.5)] + [FLAT] * 60
+    s2 = make_setup(); s2.stop_ref_displacement_ts_utc = ts("2024-05-15 10:06"); s2.stop_ref_displacement_confirmation_ts_utc = ts("2024-05-15 10:07"); s2.stop_ref_displacement_timeframe = "1m"
+    tr, nd = run(sessions, spec, ohlc, c=c, setup=s2)
+    assert tr is None and "stop_invalid" in nd["reason"]
+    # reference candle not completed at setup time -> rejected
+    s3 = make_setup(); s3.stop_ref_displacement_ts_utc = ts("2024-05-15 10:10"); s3.stop_ref_displacement_confirmation_ts_utc = ts("2024-05-15 10:11"); s3.stop_ref_displacement_timeframe = "1m"
+    tr, nd = run(sessions, spec, [FLAT] * 70, c=c, setup=s3)
+    assert tr is None and nd["reason"] == "displacement_candle_not_completed_at_setup"
+
+
+def test_displacement_swing_still_blocked():
+    with pytest.raises(ValueError):
+        cfg(stop=StopConfig(type="displacement_swing"))

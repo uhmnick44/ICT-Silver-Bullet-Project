@@ -97,3 +97,23 @@ def test_ineligible_window_is_first_gate():
     f = feats(sweeps=[sweep_row()], fvgs=[fvg_row()])
     setup, diag = build_setup(window_row(eligible=False, reasons="incomplete_window_bars(59/60)"), prepare_tables(f, BASE), BASE)
     assert setup is None and diag["gate_failed"] == "window_eligible" and "59/60" in diag["reason"]
+
+
+def test_stop_reference_is_latest_displacement_no_later_than_fvg_confirmation():
+    cfg = SignalConfig(liquidity_types=("prev_session",), require_displacement=True, displacement_threshold=1.5)
+    disps = [disp_row(conf="2024-05-15 10:06", ratio=2.0), disp_row(conf="2024-05-15 10:09", ratio=1.8), disp_row(conf="2024-05-15 10:11", ratio=3.0),
+             disp_row(conf="2024-05-15 10:08", ratio=2.5, direction="bearish")]
+    f = feats(sweeps=[sweep_row()], fvgs=[fvg_row(conf="2024-05-15 10:10")], disps=disps)
+    setup, _ = build_setup(window_row(), prepare_tables(f, cfg), cfg)
+    assert setup.displacement_confirmation_ts_utc == ts("2024-05-15 10:06")           # gating: first qualifying candle
+    assert setup.stop_ref_displacement_confirmation_ts_utc == ts("2024-05-15 10:09")  # stop: latest <= FVG confirmation, direction-matching
+    assert setup.stop_ref_displacement_ratio == 1.8 and setup.stop_ref_displacement_timeframe == "1m"
+    # a displacement candle confirmed at exactly the FVG confirmation qualifies; one confirmed later never does
+    f = feats(sweeps=[sweep_row()], fvgs=[fvg_row(conf="2024-05-15 10:10")], disps=[disp_row(conf="2024-05-15 10:06"), disp_row(conf="2024-05-15 10:10", ratio=1.6)])
+    setup, _ = build_setup(window_row(), prepare_tables(f, cfg), cfg)
+    assert setup.stop_ref_displacement_confirmation_ts_utc == ts("2024-05-15 10:10")
+    # without require_displacement the stop reference is still recorded when a candle exists, else None
+    cfg2 = SignalConfig(liquidity_types=("prev_session",), displacement_threshold=1.5)
+    f = feats(sweeps=[sweep_row()], fvgs=[fvg_row(conf="2024-05-15 10:10")])
+    setup, _ = build_setup(window_row(), prepare_tables(f, cfg2), cfg2)
+    assert setup is not None and setup.stop_ref_displacement_ts_utc is None

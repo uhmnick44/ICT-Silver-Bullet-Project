@@ -44,9 +44,17 @@ lab's deterministic choices where the specification is silent, each exposed in
 - `fvg_distal`: distal FVG boundary ± `buffer_ticks`; `fixed_points`: entry ∓ points. Stops are
   rounded away from the entry onto the tick grid; a non-positive distance rejects the setup
   (`stop_invalid`) — nothing is substituted.
-- `displacement_swing`: **blocked pending definition.** The Layer 2 displacement metadata records the
-  candle only (timestamp, range, ATR, ratio, direction) and defines no associated swing. Selecting this
-  stop fails config validation until a swing-selection rule is approved (see Open items).
+- `displacement_candle_extreme` (APPROVED, Layer 3 ambiguity resolution 1, used for the baseline):
+  long = one tick below the low of the selected bullish displacement candle; short = one tick above the
+  high of the selected bearish candle (`buffer_ticks`, default 1). The selected candle is the **latest**
+  qualifying direction-matching displacement candle (ratio ≥ `displacement_threshold`) confirmed after
+  the sweep confirmation and no later than the FVG confirmation; it is frozen on the setup
+  (`stop_ref_displacement_*`). The extreme is aggregated from the 1m bars of the candle's bucket, so it
+  works for any displacement timeframe. Missing candle, incomplete candle at setup time, or a
+  non-positive stop distance rejects the setup at gate `stop` with the reason recorded — nothing is
+  substituted. This extreme is **not** treated as a confirmed structural swing.
+- `displacement_swing`: **separate, unresolved mode — blocked.** The Layer 2 metadata defines no
+  structural swing associated with displacement; selecting this stop fails config validation.
 
 ## Targets
 
@@ -67,7 +75,8 @@ lab's deterministic choices where the specification is silent, each exposed in
 - Exit policies: `window_end` (exit at the open of the first bar at/after the window end),
   `rth_end` (open of the first bar at/after 16:00 ET), `hold` (stop/target only). Time exits use
   the first executable price after the condition is known (next bar open), never a completed close,
-  minus `time_exit_slippage_ticks` adverse (ASSUMPTION default 1).
+  minus `time_exit_slippage_ticks` adverse (APPROVED baseline assumption: 1 tick, configurable; included in
+  net P&L and net R).
 - If the session ends before a time exit can execute (early close), the exit happens at the first bar
   of the next session and is flagged `exit_after_session_break`.
 - One position at a time: a window whose start falls while a position is open is skipped with gate
@@ -87,11 +96,12 @@ lab's deterministic choices where the specification is silent, each exposed in
 - Prices and distances are on the back-adjusted series; point differences are invariant under the
   additive adjustment inside a contract segment. Unadjusted entry/stop/target/exit prices and the
   contract symbols are recorded (`*_unadjusted`, `entry_symbol`, `exit_symbol`, `*_adjustment`).
-- Rolls: a trade whose holding period crosses a roll timestamp or whose entry and exit adjustments
-  differ is flagged `spans_roll`; with `roll.policy = flag_and_exclude` (default) it is also marked
-  `excluded_by_roll_policy`. Realistic rollover of an open position is unresolved; such trades are
-  never silently kept. The `rth_end` and `window_end` policies cannot produce roll-spanning trades
-  because rolls take effect at the 18:00 ET session open.
+- Rolls (APPROVED): a trade whose holding period crosses a roll timestamp or whose entry and exit
+  adjustments differ is flagged `spans_roll`; with `roll.policy = flag_and_exclude` (default) it is also
+  marked `excluded_by_roll_policy`, `included = False`, `exclusion_reason = spans_contract_roll`, and the
+  manifest records `roll_exclusions` (counts and reasons). Positions are never stitched across two
+  contracts. The `rth_end` and `window_end` policies cannot produce roll-spanning trades because rolls
+  take effect at the 18:00 ET session open.
 
 ## Reproducibility
 
@@ -100,12 +110,15 @@ and hash, Layer 2 config hash, Layer 1 config hash and data content hash, featur
 (cache/computed), development range, `holdout_accessed: false`, trade and no-trade content hashes,
 software versions). Trades carry `trade_id`, `config_hash` and `series_id`.
 
-## Open items (require a decision)
+## Resolved (Layer 3 ambiguity resolution)
 
-1. **Displacement-swing stop definition.** Candidates that are fully knowable at setup time:
-   (a) the sweep extreme (level price ∓ max penetration) — the low/high that took the liquidity;
-   (b) the displacement candle's own low/high;
-   (c) the extreme of the move from the sweep penetration bar through the displacement candle
-   (= min/max of (a) and (b) in practice). Until one is approved, the baseline verification runs with
-   the FVG-distal stop as an explicitly labelled stand-in (`configs/baseline_verification.toml`).
-2. Rollover handling for positions held across a roll (only reachable with `exit.policy = hold`).
+1. Displacement-associated stop → `displacement_candle_extreme` for the verification baseline;
+   `displacement_swing` kept as a separate unresolved mode.
+2. Roll-spanning positions → flagged and excluded by default, with counts and reasons recorded.
+3. Time-exit slippage → one adverse tick, configurable, included in net P&L and net R.
+
+## Open items
+
+1. `displacement_swing` stop: definition of a confirmed structural swing associated with displacement.
+2. Rollover handling for positions held across a roll (only reachable with `exit.policy = hold`);
+   such trades are excluded until a policy is approved.

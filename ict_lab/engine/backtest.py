@@ -91,6 +91,8 @@ def run_backtest(cfg: Layer3Config, store: FeatureStore, log=lambda *_: None) ->
         last_exit = trade["exit_ts_utc"]
     tr = pd.DataFrame(trades)
     if len(tr):
+        tr["included"] = ~tr["excluded_by_roll_policy"]
+        tr["exclusion_reason"] = np.where(tr["excluded_by_roll_policy"], "spans_contract_roll", "")
         first = ["trade_id", "config_hash", "series_id", "trading_date", "window", "direction", "level_type", "level_price"]
         tr = tr[first + [c for c in tr.columns if c not in first]]
     nd = pd.DataFrame(diags)
@@ -112,6 +114,10 @@ def write_backtest(result: dict, cfg: Layer3Config, store: FeatureStore, l2cfg, 
                 "trades": int(len(tr)), "trades_content_hash": content_hash(tr) if len(tr) else None,
                 "no_trade_windows": int(len(nd)), "no_trade_content_hash": content_hash(nd) if len(nd) else None,
                 "gate_failure_counts": nd["gate_failed"].value_counts().to_dict() if len(nd) else {},
+                "roll_exclusions": {"policy": cfg.roll.policy, "trades_spanning_roll": int(tr["spans_roll"].sum()) if len(tr) else 0,
+                                     "trades_excluded": int(tr["excluded_by_roll_policy"].sum()) if len(tr) else 0,
+                                     "reasons": tr.loc[tr["excluded_by_roll_policy"], "exclusion_reason"].value_counts().to_dict() if len(tr) else {}},
+                "trades_included": int(tr["included"].sum()) if len(tr) else 0,
                 "exit_reason_counts": tr["exit_reason"].value_counts().to_dict() if len(tr) else {},
                 "software": software_versions(), "elapsed_seconds": round(result["elapsed"], 2)}
     (out / "backtest_manifest.json").write_text(json.dumps(manifest, indent=2, default=str))

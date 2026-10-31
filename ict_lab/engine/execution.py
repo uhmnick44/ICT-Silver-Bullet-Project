@@ -64,13 +64,38 @@ def entry_limit_price(setup: Setup, cfg: Layer3Config, spec: InstrumentSpec) -> 
     return round_to_tick(mid, spec.tick_size, "down" if bull else "up")   # away from proximal = deeper into the gap
 
 
-def stop_price(setup: Setup, entry: float, cfg: Layer3Config, spec: InstrumentSpec) -> tuple[float | None, str]:
+TF_MINUTES = {"1m": 1, "5m": 5, "15m": 15, "1h": 60}
+
+
+def displacement_candle_extreme(setup: Setup, bars: BarArrays) -> tuple[float | None, str]:
+    """Low (bullish) / high (bearish) of the frozen stop-reference displacement candle, aggregated from the
+    1m bars inside its bucket [ts, ts + timeframe). Returns (price, status)."""
+    if setup.stop_ref_displacement_ts_utc is None:
+        return None, "no_displacement_candle_between_sweep_and_fvg"
+    t0 = naive_utc(setup.stop_ref_displacement_ts_utc)
+    t1 = t0 + np.timedelta64(TF_MINUTES[setup.stop_ref_displacement_timeframe], "m")
+    a = int(np.searchsorted(bars.ts, t0, side="left")); b = int(np.searchsorted(bars.ts, t1, side="left"))
+    if b <= a:
+        return None, "displacement_candle_bars_missing"
+    if setup.stop_ref_displacement_confirmation_ts_utc > setup.setup_ts_utc:
+        return None, "displacement_candle_not_completed_at_setup"
+    return (float(bars.l[a:b].min()) if setup.direction == "bullish" else float(bars.h[a:b].max())), "ok"
+
+
+def stop_price(setup: Setup, entry: float, cfg: Layer3Config, spec: InstrumentSpec, bars: BarArrays | None = None) -> tuple[float | None, str]:
     bull = setup.direction == "bullish"
     buf = cfg.stop.buffer_ticks * spec.tick_size
     if cfg.stop.type == "fvg_distal":
         raw = setup.fvg_lower - buf if bull else setup.fvg_upper + buf
     elif cfg.stop.type == "fixed_points":
         raw = entry - cfg.stop.fixed_points if bull else entry + cfg.stop.fixed_points
+    elif cfg.stop.type == "displacement_candle_extreme":
+        if bars is None:
+            return None, "displacement_candle_extreme requires bars"
+        ext, status = displacement_candle_extreme(setup, bars)
+        if ext is None:
+            return None, status
+        raw = ext - buf if bull else ext + buf
     else:
         return None, f"stop type {cfg.stop.type} awaiting definition"
     stop = round_to_tick(raw, spec.tick_size, "down" if bull else "up")
@@ -114,7 +139,7 @@ def simulate(setup: Setup, bars: BarArrays, cfg: Layer3Config, spec: InstrumentS
     bull = setup.direction == "bullish"; sgn = 1.0 if bull else -1.0
     tick = spec.tick_size; qty = cfg.sizing.contracts
     limit = entry_limit_price(setup, cfg, spec)
-    stop, why = stop_price(setup, limit, cfg, spec)
+    stop, why = stop_price(setup, limit, cfg, spec, bars)
     base = {"trading_date": setup.trading_date, "window": setup.window, "direction": setup.direction, "setup_ts_utc": setup.setup_ts_utc,
             "entry_limit": limit}
     if stop is None:
@@ -198,7 +223,9 @@ def simulate(setup: Setup, bars: BarArrays, cfg: Layer3Config, spec: InstrumentS
         "mss_id": setup.mss_id, "mss_break_ts_utc": setup.mss_break_ts_utc, "displacement_ts_utc": setup.displacement_ts_utc,
         "displacement_confirmation_ts_utc": setup.displacement_confirmation_ts_utc, "displacement_ratio": setup.displacement_ratio,
         "fvg_id": setup.fvg_id, "fvg_timeframe": setup.fvg_timeframe, "fvg_confirmation_ts_utc": setup.fvg_confirmation_ts_utc,
-        "fvg_upper": setup.fvg_upper, "fvg_lower": setup.fvg_lower, "bias": setup.bias,
+        "fvg_upper": setup.fvg_upper, "fvg_lower": setup.fvg_lower, "bias": setup.bias, "stop_type": cfg.stop.type,
+        "stop_ref_displacement_ts_utc": setup.stop_ref_displacement_ts_utc, "stop_ref_displacement_timeframe": setup.stop_ref_displacement_timeframe,
+        "stop_ref_displacement_ratio": setup.stop_ref_displacement_ratio,
         "order_submitted_ts_utc": setup.setup_ts_utc, "order_active_ts_utc": pd.Timestamp(bars.ts[i0], tz="UTC"),
         "marketable_at_activation": bool(marketable),
         "entry_fill_ts_utc": pd.Timestamp(bars.ts[k], tz="UTC"), "entry_price": entry_price, "entry_price_theoretical": entry_theo,

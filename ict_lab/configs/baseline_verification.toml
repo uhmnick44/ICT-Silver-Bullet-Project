@@ -1,7 +1,7 @@
 # ENGINE VERIFICATION BASELINE (Layer 3 §12). Not a recommended or optimised strategy.
-# Deviation from §12: stop.type should be "displacement_swing"; that swing is not defined by the Layer 2
-# feature metadata, so this file uses "fvg_distal" as an explicitly labelled PROVISIONAL stand-in until
-# the swing-selection rule is approved. Everything else matches §12.
+# Stop: "displacement_candle_extreme" as approved in the Layer 3 ambiguity resolution — one tick beyond the
+# low/high of the latest qualifying direction-matching displacement candle confirmed after the sweep and no
+# later than the FVG confirmation. "displacement_swing" remains a separate, unresolved mode.
 [series]
 series_id = "mnq_volcross_next_session_backadj_v1"
 layer2_config = "configs/layer2_features.toml"
@@ -28,8 +28,8 @@ expiry = "window_end"
 round_midpoint = "away_from_proximal"
 
 [stop]
-type = "fvg_distal"            # PROVISIONAL stand-in for displacement_swing (see header)
-buffer_ticks = 1
+type = "displacement_candle_extreme"
+buffer_ticks = 1               # one MNQ tick beyond the candle extreme
 fixed_points = 20.0
 
 [target]
