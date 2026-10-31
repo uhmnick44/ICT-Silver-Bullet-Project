@@ -210,11 +210,12 @@ Resolved and approved as explicit implementation choices (see APPROVED markers a
 10. Incomplete higher-timeframe candles are excluded from FVG formation; missing-data flags are
     preserved; no bars are fabricated.
 
-Remaining open items (none block Layer 3; each is a config parameter):
+Approved on follow-up (2026-10-31), closing every open item:
 
-- `equal_handling` for fractal swings defaults to `first`; the specification only requires determinism.
-- `liquidity.consumption_rule`: a penetration that never reverses within the delay consumes the level
-  (`penetration_no_reversal`). An alternative rule (consume only on confirmed sweeps) is a one-line
-  config change if Layer 3 needs it.
-- The sweep execution timeframe (1m default, 5m allowed) and the displacement/MSS timeframes are
-  research parameters whose sweep ranges will be set in Layer 4.
+11. `equal_handling = first` for all fractal swings (earliest of equal extremes is the swing).
+12. `liquidity.consumption_rule = sweep_or_no_reversal`: a level is consumed on its first penetration,
+    whether it ends as a confirmed sweep or as a penetration without reversal; no reuse by default.
+13. Execution/measurement timeframes stay at the 1-minute defaults for sweeps, displacement and MSS;
+    alternative timeframes remain research parameters for Layer 4.
+
+No unresolved ambiguities remain for Layer 2.
