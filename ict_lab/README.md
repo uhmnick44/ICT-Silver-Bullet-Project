@@ -55,20 +55,33 @@ Databento's own `manifest.json` sha256 values before anything is decoded.
 2. **Sessions** — CME trading date = NY calendar date, except bars at/after 18:00 ET belong to the
    next date. Session = 18:00 ET (previous day) → 17:00 ET; maintenance 17:00–18:00. Window flags
    (half-open, NY wall clock): `in_rth` 09:30–16:00, `in_sb_london` 03:00–04:00, `in_sb_ny_am`
-   10:00–11:00, `in_sb_ny_pm` 14:00–15:00. Holidays and early closes are detected from the data
-   (first/last bar vs nominal open/close, bar count) — no external calendar is assumed.
-3. **Roll selection** — documented volume-crossover rule (see `engine/rolls.py` docstring and the
-   roll report): a challenger with later expiry whose daily volume strictly exceeds the incumbent's
+   10:00–11:00, `in_sb_ny_pm` 14:00–15:00. Observed coverage (missing dates, early closes, late
+   opens, internal gaps) is measured from the bars and reported as `observed_*`. It is **not**
+   interpreted as a holiday classification: every date is `calendar_unverified` until it appears
+   in `configs/cme_calendar_verified.csv` (date, classification, source) checked against an
+   authoritative CME trading calendar.
+3. **Roll selection** — the lab's own convention `lab_volume_crossover_next_session_v1` (see
+   `engine/rolls.py` and the roll report), not the unknown vendor convention of the original
+   research: a challenger with later expiry whose daily volume strictly exceeds the incumbent's
    on trading date D becomes the active contract on D+1. Ties keep the incumbent; never rolls
-   backward; the first date uses its own volume (flagged).
+   backward. Alternative conventions are registered in `rolls.ROLL_METHODS` and selected via
+   `[roll].method` so later layers can test roll-rule sensitivity. The first trading date has no
+   prior session, so its contract comes from its own volume: that session is flagged
+   `noncausal_contract_selection` and all its `eligible_<window>` flags are False.
 4. **Continuous series** — unadjusted = the active contract's own bars (nothing interpolated).
    Back-adjusted = unadjusted + additive offset, anchored to the latest contract (adjustment 0);
-   offset_k = close(new) − close(old) at the 16:59 ET bar of the crossover session. All offsets
-   and cumulative adjustments are verified multiples of 0.25. Both files have identical rows,
-   timestamps, volume and flags; only OHLC and `adjustment` differ.
+   offset_k = close(new) − close(old) at the 16:59 ET bar of the crossover session. Both contracts
+   must have a valid bar at exactly that minute; otherwise the roll is flagged `needs_review`,
+   nothing is substituted, `MNQ_rolls_NEEDS_REVIEW.csv` is written and the pipeline aborts. All
+   offsets and cumulative adjustments are verified multiples of 0.25. Both files have identical
+   rows, timestamps, volume and flags; only OHLC and `adjustment` differ.
 5. **Quality** — per-bar checks (duplicates, OHLC validity, tick grid, zero volume, NaN), per-session
-   completeness, gap classification, vendor-degraded flag (Databento `condition.json`), abnormal
-   discontinuity scan, and a hard check that the four audited anomalies are reproduced exactly.
+   completeness, gap classification, abnormal discontinuity scan, and a hard check that the four
+   audited anomalies are reproduced exactly. Databento `condition.json` flags are UTC-date vendor
+   attributes and are reported independently of observed completeness:
+   `vendor_degraded_utc_overlap` (session span touches a degraded UTC date),
+   `missing_minutes_in_degraded_utc_window` (observed loss inside that overlap) and
+   `vendor_degraded_with_observed_loss`. A vendor flag never changes eligibility by itself.
 6. **Split** — `split` column: `development` (trading dates 2022-10-03 … 2024-10-18), `holdout`
    (2024-10-21 … 2026-10-20), `excluded` (the truncated 2026-10-21 session).
 
@@ -83,10 +96,13 @@ Databento's own `manifest.json` sha256 values before anything is decoded.
 | `adjustment` | additive offset applied to this bar (0 in the unadjusted file and for the latest contract) |
 | `minute_of_day_ny`, `weekday_ny` | wall-clock helpers |
 | `in_rth`, `in_sb_london`, `in_sb_ny_am`, `in_sb_ny_pm`, `in_maintenance` | window membership |
-| `eligible_<window>` | bar is inside the window **and** the session's window has every minute present and is not the truncated final session |
+| `eligible_<window>` | bar is inside the window **and** the session's window has every minute present **and** the session is neither the truncated final session nor the non-causal first session |
 | `bar_index`, `gap_prev_min`, `consecutive_prev` | `consecutive_prev` is False whenever the previous bar is not exactly one minute earlier — detectors must not treat such bars as consecutive |
 | `segment_id`, `is_first_bar_of_contract` | roll segments |
-| `session_complete`, `is_truncated_final`, `vendor_degraded` | session-level flags |
+| `session_complete`, `is_truncated_final` | observed session-level flags |
+| `vendor_degraded_utc_overlap`, `vendor_degraded_with_observed_loss`, `in_vendor_degraded_utc_date` | Databento condition flags (UTC-date based), independent of observed completeness |
+| `noncausal_contract_selection` | True only on the first session (contract chosen from its own volume) |
+| `calendar_status` | `calendar_unverified` or `verified:<classification>` from the authoritative calendar file |
 | `split` | development / holdout / excluded |
 
 ## Research access and holdout protection
@@ -121,13 +137,15 @@ Nothing in Layer 1 computes signals or performance on any split.
   sessions with an ineligible window.
 - `runs/roll_charts/` — adjusted vs unadjusted closes around selected rolls + `roll_boundary_jumps.csv`.
 
-## Known assumptions (not resolvable from the files alone)
+## Approved conventions and open items
 
-1. The original research's vendor roll convention is unknown; this rule is volume crossover
-   effective next session. Later layers must test sensitivity to the roll rule.
-2. The offset reference minute (16:59 ET close of the crossover session) is a documented choice,
-   not the vendor's.
-3. Holidays/early closes are inferred from the data, not from an official CME calendar.
-4. Databento's `condition.json` dates are treated as UTC dates; a session is flagged degraded if
-   its UTC span touches such a date (conservative; next-day sessions may be flagged).
-5. Single-digit year codes in raw symbols are mapped to the 2020s (valid for 2022–2029 data).
+1. Roll convention `lab_volume_crossover_next_session_v1` is the lab's convention, approved for
+   Layer 1; it is not claimed to match the original research's vendor series. Sensitivity to the
+   roll rule is a Layer 2+ task via `ROLL_METHODS`.
+2. Offset reference = 16:59 ET close of the crossover session, both bars required (no substitution).
+3. Observed shortened/missing sessions remain `calendar_unverified` until an authoritative CME
+   calendar is entered in `configs/cme_calendar_verified.csv` (currently empty).
+4. Vendor condition flags are UTC-date attributes reported separately from observed loss.
+5. The first session (2022-10-03) is flagged non-causal and is ineligible for strictly causal
+   strategy testing; it stays in the development split for look-back context only.
+6. Single-digit year codes in raw symbols are mapped to the 2020s (valid for 2022–2029 data).

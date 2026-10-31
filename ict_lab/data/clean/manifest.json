@@ -1,8 +1,12 @@
 {
+  "calendar_verified_rows": 0,
   "config": {
     "adjustment": {
       "anchor": "latest_contract",
       "method": "additive_backward"
+    },
+    "calendar": {
+      "verified_calendar_file": "configs/cme_calendar_verified.csv"
     },
     "instrument": {
       "exchange_dataset": "GLBX.MDP3",
@@ -56,7 +60,10 @@
       "window_eligibility": "all_minutes_present"
     },
     "roll": {
+      "allow_unresolved_rolls": false,
       "confirmation_days": 1,
+      "convention_name": "lab_volume_crossover_next_session_v1",
+      "flag_noncausal_initialization": true,
       "forward_only": true,
       "method": "volume_crossover",
       "reference_minute": "16:59",
@@ -96,7 +103,7 @@
       "holdout_start": "2024-10-21"
     }
   },
-  "config_hash": "db825e72123abedab96832c66536a273a960f32e795af34296a2e5b8d64c3b66",
+  "config_hash": "06eb8453396d521786b22379b0f35470a0527a228d760c76071fef6edbd046e5",
   "config_path": "/home/user/ICT-Silver-Bullet-Project/ict_lab/configs/layer1_data.toml",
   "continuous_rows": 1434205,
   "cross_job_duplicates_dropped": 2025,
@@ -117,10 +124,10 @@
       "2025-09-24"
     ]
   },
-  "elapsed_seconds": 32.6,
+  "elapsed_seconds": 53.4,
   "first_bar_ny": "2022-10-02 18:00:00-04:00",
   "first_bar_utc": "2022-10-02 22:00:00+00:00",
-  "generated_utc": "2026-10-30T23:27:37.403040+00:00",
+  "generated_utc": "2026-10-31T00:30:15.188119+00:00",
   "jobs": {
     "GLBX-20261021-5QBR9J5GST": {
       "customizations": {
@@ -179,75 +186,78 @@
   },
   "last_bar_ny": "2026-10-20 19:59:00-04:00",
   "last_bar_utc": "2026-10-20 23:59:00+00:00",
+  "noncausal_initialization_sessions": [
+    "2022-10-03"
+  ],
   "outputs": {
     "MNQ_1m_backadjusted.parquet": {
-      "content_hash": "6178055609bddaa20d3a5bdc63866c375d23fabd026ae8980a68d23949e7bc5d",
+      "content_hash": "159055aaa2fd877d3f375c811b7c6d142fb74b66155b131c8d3bed47baf89578",
       "rows": 1434205,
-      "sha256": "66df299a305ccd68d6d00a9f71cd4f0a2d92dd0a44f49198c7375cc7ee9fedc9"
+      "sha256": "bad0b2411e71db23c8793b16d6a695e2a8bb79e85a36f16d73576d9a78c70030"
     },
     "MNQ_1m_unadjusted.parquet": {
-      "content_hash": "eeefd81add284a60b295a593b82d318e378080328c7e65d94c2e97df5ae8efc0",
+      "content_hash": "addfafcd7b8de561fe879838e43467201ec3aee82978df9a73a2af36861186d7",
       "rows": 1434205,
-      "sha256": "02e7d79f4a37cbaff7538ab91579bdb328eddd0ec9ca27d11d813d7371f4ed01"
+      "sha256": "0aa9e24d53045c7b17b1c80d56e97b03318685bff1748300b365c96e7dcdc9cf"
     },
     "MNQ_rolls.csv": {
       "rows": 16,
-      "sha256": "a8191ce49e7b565b94084d7bfc0476b842dd7be6734a9be6cc3eafde8744c72e"
+      "sha256": "fb2c5f795ff58461bca63d1e505b970748c06d99503cd6bc89aa84246479d205"
     },
     "MNQ_sessions.parquet": {
       "rows": 1048,
-      "sha256": "5cd6deec94b4e0d9033d5348c83bc4b0c8b575b966de551635d1a1b5e5d96317"
+      "sha256": "231d09f816e4ccaee4fd5d6d966acc651818ef22be660441457fe19d24888c2d"
     },
     "partitioned": [
       {
         "path": "partitioned/symbol_root=MNQ/series_type=unadjusted/year=2022/part-0.parquet",
         "rows": 87854,
-        "sha256": "806ea2afb4d5c7228942ccea31ca32044cb5d72e81d40ca3e8b5900e97ec8ab6"
+        "sha256": "3db43682c3136c6d6f6b3118cd8a9060dd40fa92add9d531a5172d670dd6c8d1"
       },
       {
         "path": "partitioned/symbol_root=MNQ/series_type=unadjusted/year=2023/part-0.parquet",
         "rows": 353444,
-        "sha256": "fdce5f3df5c264189c6ffcbb0491762ff576589c55bd52b0576dcde81514d73c"
+        "sha256": "6f7c93d5fe55d691f55973990283018ba6865a67fe0476c33c3c39ed0c987c41"
       },
       {
         "path": "partitioned/symbol_root=MNQ/series_type=unadjusted/year=2024/part-0.parquet",
         "rows": 355065,
-        "sha256": "a3efa24ad4dc4eb9d4f47129beff2d5ff21041f56da96eb2158802d92b885954"
+        "sha256": "e9ff8f0051ff2c407ac4455b5e019eed2c6ca00ae93c2ac97847a3fa1425f15b"
       },
       {
         "path": "partitioned/symbol_root=MNQ/series_type=unadjusted/year=2025/part-0.parquet",
         "rows": 352587,
-        "sha256": "0630a6be5a4fb2739e929a0ec17bc7c3252c1a160816865a3661125d8e333f58"
+        "sha256": "88cf68c2f77d665736d90e0717cb0b654a0384b14575704629c7730fdce2fc24"
       },
       {
         "path": "partitioned/symbol_root=MNQ/series_type=unadjusted/year=2026/part-0.parquet",
         "rows": 285255,
-        "sha256": "a65b610b8be7205a59cbc215402c470f3cf253ddbab7ef3ad3a5bb4e24cb6d5b"
+        "sha256": "f60a1a35c39799a68345b927f43d9ec5333e389f710e6344549dcdc20f9eff5d"
       },
       {
         "path": "partitioned/symbol_root=MNQ/series_type=backadjusted/year=2022/part-0.parquet",
         "rows": 87854,
-        "sha256": "048201249d7c81c8a378a64fd108682c411f8924a104c0e4e4bc2318d15292d0"
+        "sha256": "56c661004cfb90d73512772f1e6f3a0941f681266da0a6bea76b6c48c91040bb"
       },
       {
         "path": "partitioned/symbol_root=MNQ/series_type=backadjusted/year=2023/part-0.parquet",
         "rows": 353444,
-        "sha256": "fd9869f25b315bc9fb180982262ddfd2c274a5172df411c89f645fdf820e684b"
+        "sha256": "f18b276c525bf69b6fddb438a8ff8687814bc8b627eb33568730fb9a94982319"
       },
       {
         "path": "partitioned/symbol_root=MNQ/series_type=backadjusted/year=2024/part-0.parquet",
         "rows": 355065,
-        "sha256": "6b6e54d49b0656b13ed226cb178ee98e7d835ee1872cad5aa2597ef31533ee70"
+        "sha256": "7c7d745183577128a837d66723ae227f04099893ff51ff11c51644fb0c61c2d8"
       },
       {
         "path": "partitioned/symbol_root=MNQ/series_type=backadjusted/year=2025/part-0.parquet",
         "rows": 352587,
-        "sha256": "dddb282f6486c3fa722d1631670b6008090f809c8cc77f8c6ee90780516989cb"
+        "sha256": "25a96abeef7522c3a56d8396b91108438817a2a4cd15192b617026eb71fc5261"
       },
       {
         "path": "partitioned/symbol_root=MNQ/series_type=backadjusted/year=2026/part-0.parquet",
         "rows": 285255,
-        "sha256": "0e805400ef63b55ff4ac6e7d6b9c320bb110a98ad12467aeb35f1c710b0bd684"
+        "sha256": "696fac2809d3c3752aecb5e0c597f05cf05c5bb1fd933d67159ac50fc2d72457"
       }
     ]
   },
@@ -275,6 +285,9 @@
       "rows": 1434205,
       "zero_volume_bars": 0
     },
+    "calendar_status_counts": {
+      "calendar_unverified": 1048
+    },
     "gaps_by_class": {
       "early_close_or_late_open": 30,
       "exchange_closed_full_session": 215,
@@ -282,6 +295,7 @@
       "maintenance_break": 802
     },
     "gaps_total": 1051,
+    "incomplete_sessions_calendar_unverified": 44,
     "intra_session_gaps": 4,
     "known_anomalies": [
       {
@@ -325,6 +339,7 @@
         "vendor_flag": "none"
       }
     ],
+    "missing_dates_calendar_unverified": 10,
     "missing_trading_dates": [
       "2022-12-26",
       "2023-01-02",
@@ -357,8 +372,13 @@
     ],
     "sessions_complete": 1004,
     "sessions_incomplete": 44,
+    "sessions_noncausal_contract_selection": [
+      "2022-10-03"
+    ],
     "sessions_total": 1048,
-    "sessions_vendor_degraded": 11,
+    "sessions_vendor_degraded_but_observed_complete": 9,
+    "sessions_vendor_degraded_utc_overlap": 11,
+    "sessions_vendor_degraded_with_observed_loss": 1,
     "split_session_counts": {
       "development": 530,
       "excluded": 1,
@@ -370,23 +390,24 @@
     ],
     "window_eligibility": {
       "rth": {
-        "eligible_sessions": 1007,
-        "ineligible_sessions": 41
+        "eligible_sessions": 1006,
+        "ineligible_sessions": 42
       },
       "sb_london": {
-        "eligible_sessions": 1046,
-        "ineligible_sessions": 2
+        "eligible_sessions": 1045,
+        "ineligible_sessions": 3
       },
       "sb_ny_am": {
-        "eligible_sessions": 1044,
-        "ineligible_sessions": 4
+        "eligible_sessions": 1043,
+        "ineligible_sessions": 5
       },
       "sb_ny_pm": {
-        "eligible_sessions": 1007,
-        "ineligible_sessions": 41
+        "eligible_sessions": 1006,
+        "ineligible_sessions": 42
       }
     }
   },
+  "roll_convention": "lab_volume_crossover_next_session_v1",
   "rolls": 16,
   "sessions_complete": 1004,
   "software": {

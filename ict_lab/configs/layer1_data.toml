@@ -36,6 +36,10 @@ sb_ny_am = ["10:00", "11:00"]
 sb_ny_pm = ["14:00", "15:00"]
 
 [roll]
+# THIS LAB'S CONVENTION (not the unknown vendor convention of the original research).
+# Alternative conventions can be added to engine/rolls.py ROLL_METHODS and selected here so that
+# later layers can test roll-rule sensitivity without touching the rest of the pipeline.
+convention_name = "lab_volume_crossover_next_session_v1"
 method = "volume_crossover"
 # Daily volume = sum of 1-minute volume per contract per CME trading date.
 # A crossover on trading date D (challenger volume > incumbent volume) takes effect on the
@@ -48,14 +52,28 @@ forward_only = true
 tie_break = "incumbent"
 # Reference minute for the roll offset: the bar whose NY wall-clock time is given below,
 # on the crossover date D (last full session before the roll takes effect).
-# If either contract lacks that bar, step back one minute at a time within the same
-# session until both have a bar; the roll log flags the fallback.
+# BOTH contracts must have a valid bar (positive volume, valid OHLC) at exactly this minute.
+# If not, no price is substituted: the roll is flagged needs_review and the pipeline aborts
+# unless allow_unresolved_rolls = true (then the roll stays unresolved and the back-adjusted
+# series is NOT written).
 reference_minute = "16:59"
 reference_price_field = "close"
+allow_unresolved_rolls = false
+# The first trading date in the data has no prior session, so its contract is chosen from its
+# own session volume. That selection is NON-CAUSAL; the session is flagged and made ineligible
+# for strictly causal strategy testing (all eligible_<window> flags are False for it).
+flag_noncausal_initialization = true
 
 [adjustment]
 method = "additive_backward"
 anchor = "latest_contract"      # latest selected contract carries zero adjustment
+
+[calendar]
+# Official CME trading-calendar classification. Sessions that are observed to be missing or
+# shortened are NOT assumed to be holidays from price data alone; they are "calendar_unverified"
+# until a row for that date exists in the verified calendar file below (date, classification,
+# source). An absent or empty file leaves every date unverified.
+verified_calendar_file = "configs/cme_calendar_verified.csv"
 
 [quality]
 # Consecutive-minute price move (close[t-1] -> open[t]) flagged as an abnormal discontinuity.

@@ -6,7 +6,8 @@ from ict_lab.engine.rolls import RollRule, select_active_contracts
 
 
 def rule(**kw) -> RollRule:
-    base = dict(confirmation_days=1, forward_only=True, tie_break="incumbent", reference_minute=1019, reference_price_field="close")
+    base = dict(convention_name="test", method="volume_crossover", confirmation_days=1, forward_only=True, tie_break="incumbent",
+                reference_minute=1019, reference_price_field="close")
     base.update(kw)
     return RollRule(**base)
 
@@ -69,12 +70,40 @@ def test_real_roll_log_matches_audit_transitions(rolls_csv, session_table):
         assert nxt[r["crossover_trading_date"]] == r["effective_trading_date"]      # effective = next session
         assert r["new_volume_crossover_date"] > r["old_volume_crossover_date"]      # strict crossover
         assert r["old_volume_effective_date"] >= 0
-    assert (rolls_csv["reference_fallback_minutes"] == 0).all()
+    assert not rolls_csv["needs_review"].any()
+    assert rolls_csv[["ref_bar_present_old", "ref_bar_present_new", "ref_bar_valid_old", "ref_bar_valid_new"]].all().all()
     assert (rolls_csv["ref_minute_of_day_ny"] == 16 * 60 + 59).all()
+    assert (rolls_csv["roll_convention"] == "lab_volume_crossover_next_session_v1").all()
 
 
-def test_real_active_contract_has_no_lookahead(clean_dir, rolls_csv):
+def test_real_active_contract_has_no_lookahead_except_flagged_first_session(clean_dir, rolls_csv):
     sel = pd.read_csv(clean_dir / "MNQ_active_contract_by_date.csv", parse_dates=["trading_date", "decision_basis_date"])
     assert sel["decision_basis_date"].iloc[0] != sel["decision_basis_date"].iloc[0]  # NaT for the initial date
+    assert sel["noncausal_contract_selection"].iloc[0] and not sel["noncausal_contract_selection"].iloc[1:].any()
     later = sel.iloc[1:]
     assert (later["decision_basis_date"] < later["trading_date"]).all()
+
+
+def test_roll_method_registry_and_unknown_method(cfg):
+    from ict_lab.engine.rolls import ROLL_METHODS
+    import json
+    from ict_lab.engine.config import Config
+    assert "volume_crossover" in ROLL_METHODS
+    raw = json.loads(json.dumps(cfg.raw, default=str)); raw["roll"]["method"] = "open_interest_crossover"
+    with pytest.raises(ValueError):
+        RollRule.from_config(Config(raw=raw, path=cfg.path))
+
+
+def test_missing_reference_bar_is_flagged_not_substituted(sessions, spec):
+    from ict_lab.engine.rolls import reference_prices
+    ts = pd.date_range("2024-01-02 21:50", periods=10, freq="1min", tz="UTC")  # 16:50..16:59 EST
+    mk = lambda sym, drop_last: pd.DataFrame({"ts_utc": ts[:-1] if drop_last else ts, "symbol": sym, "instrument_id": 1,
+                                              "open": 100.0, "high": 101.0, "low": 99.0, "close": 100.5, "volume": 5})
+    bars = sessions.annotate(pd.concat([mk("MNQH4", False), mk("MNQM4", True)], ignore_index=True))
+    r = rule()
+    out = reference_prices(bars, sessions, r, "MNQH4", "MNQM4", pd.Timestamp("2024-01-02"))
+    assert out["needs_review"] and out["ref_bar_present_old"] and not out["ref_bar_present_new"]
+    assert pd.isna(out["ref_price_new"]) and pd.isna(out["ref_price_old"])
+    ok = reference_prices(sessions.annotate(pd.concat([mk("MNQH4", False), mk("MNQM4", False)], ignore_index=True)),
+                          sessions, r, "MNQH4", "MNQM4", pd.Timestamp("2024-01-02"))
+    assert not ok["needs_review"] and ok["ref_price_new"] == 100.5

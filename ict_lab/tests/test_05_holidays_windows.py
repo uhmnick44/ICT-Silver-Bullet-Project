@@ -30,14 +30,17 @@ def test_partial_morning_sessions(session_table):
 
 def test_truncated_final_session(session_table):
     r = row(session_table, "2026-10-21")
-    assert r["is_truncated_final"] and r["session_status"] == "truncated_final_session"
+    assert r["is_truncated_final"] and r["observed_session_status"] == "truncated_final_session"
     assert not (r["eligible_rth"] or r["eligible_sb_london"] or r["eligible_sb_ny_am"] or r["eligible_sb_ny_pm"])
     assert r["split"] == "excluded"
 
 
 def test_thanksgiving_2025_hole_makes_london_ineligible(session_table):
     r = row(session_table, "2025-11-28")
-    assert r["vendor_degraded"] and r["internal_missing_minutes"] == 645
+    assert r["vendor_degraded_utc_overlap"] and r["vendor_degraded_with_observed_loss"] and r["internal_missing_minutes"] == 645
+    # degraded UTC date 2025-11-28 spans 19:00 ET 11/27 -> 19:00 ET 11/28, so the overlap holds the
+    # 645-minute internal hole plus the 225 observed early-close minutes (13:15-16:59 ET)
+    assert r["missing_minutes_in_degraded_utc_window"] == 645 + 225 and r["early_close_minutes"] == 225
     assert not r["eligible_sb_london"] and r["eligible_sb_ny_am"] and not r["eligible_sb_ny_pm"]
 
 
@@ -58,3 +61,44 @@ def test_bar_level_eligibility_matches_session(unadj, session_table):
     for w in ["rth", "sb_london", "sb_ny_am", "sb_ny_pm"]:
         per_day = unadj[unadj[f"in_{w}"]].groupby("trading_date")[f"eligible_{w}"].all()
         assert (per_day == st.loc[per_day.index, f"eligible_{w}"]).all()
+
+
+def test_shortened_sessions_are_calendar_unverified_not_holidays(session_table, clean_dir):
+    import pandas as pd
+    early = session_table[session_table["observed_session_status"].str.contains("observed_early_close")]
+    assert len(early) > 30
+    assert (early["calendar_status"] == "calendar_unverified").all()
+    assert "holiday" not in " ".join(session_table["observed_session_status"].unique()).lower()
+    import json
+    q = json.loads((clean_dir / "reports" / "data_quality_report.json").read_text())
+    assert q["missing_dates_calendar_unverified"] == len(q["missing_trading_dates"])
+
+
+def test_vendor_flag_does_not_exclude_complete_sessions(session_table):
+    deg = session_table[session_table["vendor_degraded_utc_overlap"]]
+    assert len(deg) == 11
+    complete_deg = deg[deg["session_complete"]]
+    assert len(complete_deg) == 9
+    for w in ["rth", "sb_london", "sb_ny_am", "sb_ny_pm"]:
+        assert complete_deg[f"eligible_{w}"].all()
+    assert (complete_deg["missing_minutes_in_degraded_utc_window"] == 0).all()
+    assert deg["vendor_degraded_with_observed_loss"].sum() == 1
+    # a complete session must never be flagged as having observed loss
+    assert not (session_table["session_complete"] & session_table["vendor_degraded_with_observed_loss"]).any()
+
+
+def test_first_session_is_flagged_noncausal_and_ineligible(session_table, unadj):
+    r = row(session_table, "2022-10-03")
+    assert r["noncausal_contract_selection"] and r["session_complete"]
+    assert not (r["eligible_rth"] or r["eligible_sb_london"] or r["eligible_sb_ny_am"] or r["eligible_sb_ny_pm"])
+    assert session_table["noncausal_contract_selection"].sum() == 1
+    first = unadj[unadj["trading_date"] == r["trading_date"]]
+    assert first["noncausal_contract_selection"].all() and not first[["eligible_rth", "eligible_sb_london", "eligible_sb_ny_am", "eligible_sb_ny_pm"]].any().any()
+    assert not unadj.loc[unadj["trading_date"] != r["trading_date"], "noncausal_contract_selection"].any()
+
+
+def test_bar_level_degraded_flag_is_utc_date_based(unadj):
+    import pandas as pd
+    d = unadj[pd.DatetimeIndex(unadj["ts_utc"]).strftime("%Y-%m-%d") == "2024-09-18"]
+    assert d["in_vendor_degraded_utc_date"].all()
+    assert not unadj.loc[pd.DatetimeIndex(unadj["ts_utc"]).strftime("%Y-%m-%d") == "2024-09-17", "in_vendor_degraded_utc_date"].any()

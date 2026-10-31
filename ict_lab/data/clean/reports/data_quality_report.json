@@ -24,7 +24,17 @@
   "sessions_total": 1048,
   "sessions_complete": 1004,
   "sessions_incomplete": 44,
-  "sessions_vendor_degraded": 11,
+  "sessions_vendor_degraded_utc_overlap": 11,
+  "sessions_vendor_degraded_with_observed_loss": 1,
+  "sessions_vendor_degraded_but_observed_complete": 9,
+  "sessions_noncausal_contract_selection": [
+    "2022-10-03"
+  ],
+  "calendar_status_counts": {
+    "calendar_unverified": 1048
+  },
+  "incomplete_sessions_calendar_unverified": 44,
+  "missing_dates_calendar_unverified": 10,
   "truncated_final_session": [
     "2026-10-21"
   ],
@@ -112,20 +122,20 @@
   ],
   "window_eligibility": {
     "rth": {
-      "eligible_sessions": 1007,
-      "ineligible_sessions": 41
+      "eligible_sessions": 1006,
+      "ineligible_sessions": 42
     },
     "sb_london": {
-      "eligible_sessions": 1046,
-      "ineligible_sessions": 2
+      "eligible_sessions": 1045,
+      "ineligible_sessions": 3
     },
     "sb_ny_am": {
-      "eligible_sessions": 1044,
-      "ineligible_sessions": 4
+      "eligible_sessions": 1043,
+      "ineligible_sessions": 5
     },
     "sb_ny_pm": {
-      "eligible_sessions": 1007,
-      "ineligible_sessions": 41
+      "eligible_sessions": 1006,
+      "ineligible_sessions": 42
     }
   },
   "split_session_counts": {

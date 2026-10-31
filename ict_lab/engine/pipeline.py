@@ -18,6 +18,7 @@ import pyarrow.parquet as pq
 from . import continuous, quality, rolls
 from .config import Config, load_config
 from .ingest import extract_zips, load_contract_bars, sha256_file
+from .quality import load_verified_calendar
 from .instrument import InstrumentSpec
 from .manifest import content_hash, software_versions, write_manifest
 from .sessions import SessionSpec
@@ -26,8 +27,9 @@ OUTPUT_COLUMNS = [
     "ts_utc", "ts_ny", "trading_date", "symbol", "instrument_id", "open", "high", "low", "close", "volume",
     "adjustment", "series", "minute_of_day_ny", "weekday_ny", "in_rth", "in_sb_london", "in_sb_ny_am", "in_sb_ny_pm",
     "in_maintenance", "bar_index", "gap_prev_min", "consecutive_prev", "segment_id", "is_first_bar_of_contract",
-    "session_complete", "is_truncated_final", "vendor_degraded", "eligible_rth", "eligible_sb_london",
-    "eligible_sb_ny_am", "eligible_sb_ny_pm", "split",
+    "session_complete", "is_truncated_final", "vendor_degraded_utc_overlap", "vendor_degraded_with_observed_loss",
+    "in_vendor_degraded_utc_date", "noncausal_contract_selection", "calendar_status",
+    "eligible_rth", "eligible_sb_london", "eligible_sb_ny_am", "eligible_sb_ny_pm", "split",
 ]
 
 
@@ -41,9 +43,11 @@ def assign_split(trading_date: pd.Series, cfg: Config) -> pd.Series:
     return out
 
 
-def _attach_session_flags(df: pd.DataFrame, st: pd.DataFrame, sessions: SessionSpec) -> pd.DataFrame:
-    cols = ["trading_date", "session_complete", "is_truncated_final", "vendor_degraded"] + [f"eligible_{w}" for w in sessions.windows]
+def _attach_session_flags(df: pd.DataFrame, st: pd.DataFrame, sessions: SessionSpec, degraded_utc_dates: set[str]) -> pd.DataFrame:
+    cols = ["trading_date", "session_complete", "is_truncated_final", "vendor_degraded_utc_overlap",
+            "vendor_degraded_with_observed_loss", "noncausal_contract_selection", "calendar_status"] + [f"eligible_{w}" for w in sessions.windows]
     m = df.merge(st[cols], on="trading_date", how="left")
+    m["in_vendor_degraded_utc_date"] = pd.DatetimeIndex(m["ts_utc"]).strftime("%Y-%m-%d").isin(degraded_utc_dates)
     for w in sessions.windows:  # bar-level eligibility = session window eligible AND bar inside the window
         m[f"eligible_{w}"] = m[f"eligible_{w}"] & m[f"in_{w}"]
     return m
@@ -98,6 +102,15 @@ def run(cfg: Config | None = None, force: bool = False, log=print) -> dict:
     dv = rolls.daily_volume(bars)
     sel, events = rolls.select_active_contracts(dv, rule, spec)
     roll_log = rolls.build_roll_log(bars, sel, events, sessions, rule, spec)
+    if len(roll_log) and roll_log["needs_review"].any():
+        bad = roll_log[roll_log["needs_review"]]
+        bad.to_csv(clean_dir / "MNQ_rolls_NEEDS_REVIEW.csv", index=False)
+        msg = (f"{len(bad)} roll(s) lack a valid synchronized reference bar at the configured minute: "
+               f"{bad[['old_symbol', 'new_symbol', 'crossover_trading_date']].to_dict('records')}; written MNQ_rolls_NEEDS_REVIEW.csv")
+        if not rule.allow_unresolved_rolls:
+            raise RuntimeError(msg + " — no prices substituted; resolve or set [roll].allow_unresolved_rolls")
+        log("    WARNING " + msg)
+        raise RuntimeError("allow_unresolved_rolls=true is accepted for review only; the back-adjusted series is not written with unresolved rolls")
     if len(roll_log) and not roll_log["offset_is_tick_multiple"].all():
         raise RuntimeError("roll offset not on tick grid")
     log(f"    {len(roll_log)} rolls; contracts used: {sel['active_symbol'].unique().tolist()}")
@@ -108,12 +121,14 @@ def run(cfg: Config | None = None, force: bool = False, log=print) -> dict:
 
     log("[5/8] quality validation")
     degraded = {d for v in inv.degraded_dates.values() for d in v}
-    st = quality.session_table(unadj, sessions, degraded)
+    calendar = load_verified_calendar(cfg.lab_root / cfg["calendar"]["verified_calendar_file"])
+    noncausal = set(pd.to_datetime(sel.index[sel["noncausal_contract_selection"]]))
+    st = quality.session_table(unadj, sessions, degraded, calendar=calendar, noncausal_dates=noncausal)
     gaps = quality.gap_table(unadj, sessions)
     anomalies = quality.verify_known_anomalies(gaps, cfg, sessions)
-    miss_dates = quality.missing_trading_dates(st)
+    miss_dates = quality.missing_trading_dates(st, calendar=calendar)
     st["split"] = assign_split(st["trading_date"], cfg)
-    unadj = _attach_session_flags(unadj, st, sessions); adj = _attach_session_flags(adj, st, sessions)
+    unadj = _attach_session_flags(unadj, st, sessions, degraded); adj = _attach_session_flags(adj, st, sessions, degraded)
     unadj["split"] = assign_split(unadj["trading_date"], cfg); adj["split"] = adj["trading_date"].pipe(assign_split, cfg)
     unadj = unadj[OUTPUT_COLUMNS]; adj = adj[OUTPUT_COLUMNS]
     checks_u = quality.bar_checks(unadj, spec); checks_a = quality.bar_checks(adj, spec)
@@ -129,10 +144,11 @@ def run(cfg: Config | None = None, force: bool = False, log=print) -> dict:
     _to_parquet(unadj, out_u); _to_parquet(adj, out_a)
     parts = _write_partitioned(unadj, clean_dir / "partitioned", spec.root, "unadjusted") + \
             _write_partitioned(adj, clean_dir / "partitioned", spec.root, "backadjusted")
-    roll_cols = ["roll_id", "old_symbol", "new_symbol", "crossover_trading_date", "effective_trading_date",
+    roll_cols = ["roll_id", "roll_convention", "old_symbol", "new_symbol", "crossover_trading_date", "effective_trading_date",
                  "nominal_session_open_utc", "roll_ts_utc", "roll_ts_ny", "ref_ts_utc", "ref_ts_ny", "ref_minute_of_day_ny",
+                 "ref_bar_present_old", "ref_bar_present_new", "ref_bar_valid_old", "ref_bar_valid_new", "needs_review",
                  "ref_price_old", "ref_price_new", "offset_points", "offset_ticks", "offset_is_tick_multiple",
-                 "cumulative_adjustment_before_roll", "cumulative_adjustment_after_roll", "reference_fallback_minutes",
+                 "cumulative_adjustment_before_roll", "cumulative_adjustment_after_roll",
                  "old_volume_crossover_date", "new_volume_crossover_date", "old_volume_effective_date",
                  "new_volume_effective_date", "crossover_volume_ratio", "near_tie_crossover", "n_candidates"]
     rl = roll_log[roll_cols].copy()
@@ -140,13 +156,14 @@ def run(cfg: Config | None = None, force: bool = False, log=print) -> dict:
     stx = st.set_index("trading_date")
     rl["crossover_session_complete"] = rl["crossover_trading_date"].map(stx["session_complete"]).astype(bool)
     rl["effective_session_complete"] = rl["effective_trading_date"].map(stx["session_complete"]).astype(bool)
-    rl["crossover_vendor_degraded"] = rl["crossover_trading_date"].map(stx["vendor_degraded"]).astype(bool)
-    rl["effective_vendor_degraded"] = rl["effective_trading_date"].map(stx["vendor_degraded"]).astype(bool)
+    rl["crossover_vendor_degraded_utc_overlap"] = rl["crossover_trading_date"].map(stx["vendor_degraded_utc_overlap"]).astype(bool)
+    rl["effective_vendor_degraded_utc_overlap"] = rl["effective_trading_date"].map(stx["vendor_degraded_utc_overlap"]).astype(bool)
+    rl["crossover_calendar_status"] = rl["crossover_trading_date"].map(stx["calendar_status"])
     rl["roll_ts_is_nominal_open"] = rl["roll_ts_utc"] == rl["nominal_session_open_utc"]
     rl["flags"] = rl.apply(lambda r: ";".join([f for f, on in [
-        ("reference_fallback", r.reference_fallback_minutes > 0), ("near_tie_crossover", bool(r.near_tie_crossover)),
+        ("needs_review", bool(r.needs_review)), ("near_tie_crossover", bool(r.near_tie_crossover)),
         ("crossover_session_incomplete", not r.crossover_session_complete), ("effective_session_incomplete", not r.effective_session_complete),
-        ("vendor_degraded", bool(r.crossover_vendor_degraded or r.effective_vendor_degraded)),
+        ("vendor_degraded_utc_overlap", bool(r.crossover_vendor_degraded_utc_overlap or r.effective_vendor_degraded_utc_overlap)),
         ("roll_ts_not_nominal_open", not r.roll_ts_is_nominal_open), ("multiple_candidates", r.n_candidates > 1)] if on]) or "ok", axis=1)
     rl.to_csv(clean_dir / "MNQ_rolls.csv", index=False)
     st.to_parquet(clean_dir / "MNQ_sessions.parquet", index=False)
@@ -171,6 +188,9 @@ def run(cfg: Config | None = None, force: bool = False, log=print) -> dict:
         "continuous_rows": int(len(unadj)), "first_bar_utc": str(unadj["ts_utc"].min()), "last_bar_utc": str(unadj["ts_utc"].max()),
         "first_bar_ny": str(unadj["ts_ny"].min()), "last_bar_ny": str(unadj["ts_ny"].max()),
         "trading_sessions": int(len(st)), "sessions_complete": int(st["session_complete"].sum()), "rolls": int(len(rl)),
+        "roll_convention": rule.convention_name,
+        "noncausal_initialization_sessions": [str(d.date()) for d in sorted(noncausal)],
+        "calendar_verified_rows": int(len(calendar)),
         "split_session_counts": split_counts, "split": {k: str(v) for k, v in cfg["split"].items()},
         "outputs": {
             "MNQ_1m_unadjusted.parquet": {"sha256": sha256_file(out_u), "content_hash": content_hash(unadj), "rows": int(len(unadj))},
@@ -196,14 +216,16 @@ def write_roll_report(reports_dir: Path, rl: pd.DataFrame, dv: pd.DataFrame, cfg
     cmp["audit_first_leader_date"] = cmp.apply(lambda x: audit_same_day.get((x.old_symbol, x.new_symbol)), axis=1)
     cmp["effective_minus_audit_days"] = (pd.to_datetime(cmp["effective_trading_date"]) - pd.to_datetime(cmp["audit_first_leader_date"])).dt.days
     cmp["same_transition_as_audit"] = cmp["audit_first_leader_date"].notna()
-    md = ["# Contract-roll report — MNQ volume-crossover rule\n",
+    md = [f"# Contract-roll report — convention `{r['convention_name']}`\n",
+          "This is the lab's own roll convention. The original research's vendor convention is unknown; alternative conventions "
+          "can be registered in `engine/rolls.py::ROLL_METHODS` and selected with `[roll].method` for sensitivity testing.\n",
           "## Rule\n",
           f"- Method: {r['method']}; confirmation_days = {r['confirmation_days']}; forward_only = {r['forward_only']}; tie_break = {r['tie_break']}",
           f"- Crossover on trading date D (challenger daily volume strictly greater than incumbent) takes effect on the next trading date D+1 (no look-ahead).",
           f"- Roll timestamp = first bar of the new contract in the effective session (nominal open {cfg['session']['open_time']} ET of the preceding calendar day).",
-          f"- Offset = {r['reference_price_field']}(new) − {r['reference_price_field']}(old) at the {r['reference_minute']} ET bar of the crossover session, stepping back one minute at a time within that session if either contract has no bar (flagged).",
+          f"- Offset = {r['reference_price_field']}(new) − {r['reference_price_field']}(old) at the {r['reference_minute']} ET bar of the crossover session. Both contracts must have a valid bar at exactly that minute; otherwise the roll is flagged `needs_review`, no price is substituted and the pipeline aborts.",
           "- Back-adjustment: additive, anchored to the latest contract (its adjustment is 0); bars before roll k receive the sum of offsets k..n.",
-          "- Initialisation: the first trading date uses its own session volume (only place same-day volume is used).\n",
+          "- Initialisation: the first trading date uses its own session volume. This is NON-CAUSAL; that session is flagged `noncausal_contract_selection` and all its window-eligibility flags are False.\n",
           "## Roll log\n", rl.drop(columns=["nominal_session_open_utc", "ref_ts_utc", "roll_ts_utc"]).to_markdown(index=False), "\n",
           "## Comparison with the Phase 1 audit (audit = first date the new contract led volume, same-day)\n",
           "The audit's dates used each date's own full-session volume, which is not knowable at the session open. "

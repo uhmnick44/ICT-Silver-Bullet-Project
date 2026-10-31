@@ -29,6 +29,8 @@ def test_manifest_records_provenance(clean_dir):
     assert len(m["source_hashes"]) == 66 and len(m["zip_hashes"]) == 2
     assert m["config_hash"] and m["software"]["pandas"] and m["outputs"]["MNQ_1m_backadjusted.parquet"]["content_hash"]
     assert m["rolls"] == 16 and m["trading_sessions"] == 1048
+    assert m["roll_convention"] == "lab_volume_crossover_next_session_v1"
+    assert m["noncausal_initialization_sessions"] == ["2022-10-03"] and m["calendar_verified_rows"] == 0
 
 
 @pytest.mark.slow

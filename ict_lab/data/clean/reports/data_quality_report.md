@@ -9,72 +9,74 @@
 
 ## Sessions
 
-- Trading sessions: 1048 (complete 1004, incomplete 44, vendor-degraded 11)
+- Trading sessions: 1048 (observed complete 1004, observed incomplete 44)
 - Truncated final session (excluded from complete-session calculations): ['2026-10-21']
+- Non-causal contract selection (first session; ineligible for strictly causal testing): ['2022-10-03']
 - Total nominal session minutes with no bar: 12035
-- Weekdays with no bars at all (exchange closed per data): 10
+- Calendar classification: {'calendar_unverified': 1048} — observed coverage is measured from bars; official CME calendar status is a separate attribute and is 'calendar_unverified' until an authoritative calendar row exists in configs/cme_calendar_verified.csv.
+- Weekdays with no session bars at all: 10 (calendar-unverified: 10). These are NOT asserted to be exchange holidays from price data alone.
 
-| trading_date        | weekday   |
-|:--------------------|:----------|
-| 2022-12-26 00:00:00 | Monday    |
-| 2023-01-02 00:00:00 | Monday    |
-| 2023-12-25 00:00:00 | Monday    |
-| 2024-01-01 00:00:00 | Monday    |
-| 2024-03-29 00:00:00 | Friday    |
-| 2024-12-25 00:00:00 | Wednesday |
-| 2025-01-01 00:00:00 | Wednesday |
-| 2025-04-18 00:00:00 | Friday    |
-| 2025-12-25 00:00:00 | Thursday  |
-| 2026-01-01 00:00:00 | Thursday  |
+| trading_date        | weekday   | observed        | calendar_status     |
+|:--------------------|:----------|:----------------|:--------------------|
+| 2022-12-26 00:00:00 | Monday    | no_session_bars | calendar_unverified |
+| 2023-01-02 00:00:00 | Monday    | no_session_bars | calendar_unverified |
+| 2023-12-25 00:00:00 | Monday    | no_session_bars | calendar_unverified |
+| 2024-01-01 00:00:00 | Monday    | no_session_bars | calendar_unverified |
+| 2024-03-29 00:00:00 | Friday    | no_session_bars | calendar_unverified |
+| 2024-12-25 00:00:00 | Wednesday | no_session_bars | calendar_unverified |
+| 2025-01-01 00:00:00 | Wednesday | no_session_bars | calendar_unverified |
+| 2025-04-18 00:00:00 | Friday    | no_session_bars | calendar_unverified |
+| 2025-12-25 00:00:00 | Thursday  | no_session_bars | calendar_unverified |
+| 2026-01-01 00:00:00 | Thursday  | no_session_bars | calendar_unverified |
 
-### Incomplete sessions
+### Observed incomplete sessions (shortened/gapped per bars; calendar status shown separately)
 
-| trading_date        | active_symbol   |   n_bars |   missing_minutes |   late_open_minutes |   early_close_minutes |   internal_missing_minutes | first_bar_ny              | last_bar_ny               | vendor_degraded   | session_status            |
-|:--------------------|:----------------|---------:|------------------:|--------------------:|----------------------:|---------------------------:|:--------------------------|:--------------------------|:------------------|:--------------------------|
-| 2022-11-24 00:00:00 | MNQZ2           |     1140 |               240 |                   0 |                   240 |                          0 | 2022-11-23 18:00:00-05:00 | 2022-11-24 12:59:00-05:00 | False             | early_close               |
-| 2022-11-25 00:00:00 | MNQZ2           |     1155 |               225 |                   0 |                   225 |                          0 | 2022-11-24 18:00:00-05:00 | 2022-11-25 13:14:00-05:00 | False             | early_close               |
-| 2022-12-13 00:00:00 | MNQH3           |     1379 |                 1 |                   0 |                     0 |                          1 | 2022-12-12 18:00:00-05:00 | 2022-12-13 16:59:00-05:00 | False             | internal_gaps             |
-| 2023-01-16 00:00:00 | MNQH3           |     1140 |               240 |                   0 |                   240 |                          0 | 2023-01-15 18:00:00-05:00 | 2023-01-16 12:59:00-05:00 | False             | early_close               |
-| 2023-02-20 00:00:00 | MNQH3           |     1140 |               240 |                   0 |                   240 |                          0 | 2023-02-19 18:00:00-05:00 | 2023-02-20 12:59:00-05:00 | False             | early_close               |
-| 2023-04-07 00:00:00 | MNQM3           |      915 |               465 |                   0 |                   465 |                          0 | 2023-04-06 18:00:00-04:00 | 2023-04-07 09:14:00-04:00 | False             | early_close               |
-| 2023-05-29 00:00:00 | MNQM3           |     1140 |               240 |                   0 |                   240 |                          0 | 2023-05-28 18:00:00-04:00 | 2023-05-29 12:59:00-04:00 | False             | early_close               |
-| 2023-06-19 00:00:00 | MNQU3           |     1140 |               240 |                   0 |                   240 |                          0 | 2023-06-18 18:00:00-04:00 | 2023-06-19 12:59:00-04:00 | False             | early_close               |
-| 2023-07-03 00:00:00 | MNQU3           |     1155 |               225 |                   0 |                   225 |                          0 | 2023-07-02 18:00:00-04:00 | 2023-07-03 13:14:00-04:00 | False             | early_close               |
-| 2023-07-04 00:00:00 | MNQU3           |     1139 |               241 |                   0 |                   240 |                          1 | 2023-07-03 18:00:00-04:00 | 2023-07-04 12:59:00-04:00 | False             | early_close+internal_gaps |
-| 2023-09-04 00:00:00 | MNQU3           |     1140 |               240 |                   0 |                   240 |                          0 | 2023-09-03 18:00:00-04:00 | 2023-09-04 12:59:00-04:00 | False             | early_close               |
-| 2023-11-23 00:00:00 | MNQZ3           |     1140 |               240 |                   0 |                   240 |                          0 | 2023-11-22 18:00:00-05:00 | 2023-11-23 12:59:00-05:00 | False             | early_close               |
-| 2023-11-24 00:00:00 | MNQZ3           |     1155 |               225 |                   0 |                   225 |                          0 | 2023-11-23 18:00:00-05:00 | 2023-11-24 13:14:00-05:00 | False             | early_close               |
-| 2024-01-15 00:00:00 | MNQH4           |     1140 |               240 |                   0 |                   240 |                          0 | 2024-01-14 18:00:00-05:00 | 2024-01-15 12:59:00-05:00 | False             | early_close               |
-| 2024-02-19 00:00:00 | MNQH4           |     1140 |               240 |                   0 |                   240 |                          0 | 2024-02-18 18:00:00-05:00 | 2024-02-19 12:59:00-05:00 | False             | early_close               |
-| 2024-05-27 00:00:00 | MNQM4           |     1140 |               240 |                   0 |                   240 |                          0 | 2024-05-26 18:00:00-04:00 | 2024-05-27 12:59:00-04:00 | False             | early_close               |
-| 2024-06-19 00:00:00 | MNQU4           |     1140 |               240 |                   0 |                   240 |                          0 | 2024-06-18 18:00:00-04:00 | 2024-06-19 12:59:00-04:00 | False             | early_close               |
-| 2024-07-03 00:00:00 | MNQU4           |     1155 |               225 |                   0 |                   225 |                          0 | 2024-07-02 18:00:00-04:00 | 2024-07-03 13:14:00-04:00 | False             | early_close               |
-| 2024-07-04 00:00:00 | MNQU4           |     1140 |               240 |                   0 |                   240 |                          0 | 2024-07-03 18:00:00-04:00 | 2024-07-04 12:59:00-04:00 | False             | early_close               |
-| 2024-09-02 00:00:00 | MNQU4           |     1140 |               240 |                   0 |                   240 |                          0 | 2024-09-01 18:00:00-04:00 | 2024-09-02 12:59:00-04:00 | False             | early_close               |
-| 2024-11-28 00:00:00 | MNQZ4           |     1140 |               240 |                   0 |                   240 |                          0 | 2024-11-27 18:00:00-05:00 | 2024-11-28 12:59:00-05:00 | False             | early_close               |
-| 2024-11-29 00:00:00 | MNQZ4           |     1155 |               225 |                   0 |                   225 |                          0 | 2024-11-28 18:00:00-05:00 | 2024-11-29 13:14:00-05:00 | False             | early_close               |
-| 2024-12-24 00:00:00 | MNQH5           |     1155 |               225 |                   0 |                   225 |                          0 | 2024-12-23 18:00:00-05:00 | 2024-12-24 13:14:00-05:00 | False             | early_close               |
-| 2025-01-09 00:00:00 | MNQH5           |      930 |               450 |                   0 |                   450 |                          0 | 2025-01-08 18:00:00-05:00 | 2025-01-09 09:29:00-05:00 | False             | early_close               |
-| 2025-01-20 00:00:00 | MNQH5           |     1140 |               240 |                   0 |                   240 |                          0 | 2025-01-19 18:00:00-05:00 | 2025-01-20 12:59:00-05:00 | False             | early_close               |
-| 2025-02-17 00:00:00 | MNQH5           |     1140 |               240 |                   0 |                   240 |                          0 | 2025-02-16 18:00:00-05:00 | 2025-02-17 12:59:00-05:00 | False             | early_close               |
-| 2025-04-02 00:00:00 | MNQM5           |     1379 |                 1 |                   0 |                     0 |                          1 | 2025-04-01 18:00:00-04:00 | 2025-04-02 16:59:00-04:00 | False             | internal_gaps             |
-| 2025-04-03 00:00:00 | MNQM5           |     1378 |                 2 |                   2 |                     0 |                          0 | 2025-04-02 18:02:00-04:00 | 2025-04-03 16:59:00-04:00 | False             | late_open                 |
-| 2025-05-26 00:00:00 | MNQM5           |     1140 |               240 |                   0 |                   240 |                          0 | 2025-05-25 18:00:00-04:00 | 2025-05-26 12:59:00-04:00 | False             | early_close               |
-| 2025-06-19 00:00:00 | MNQU5           |     1140 |               240 |                   0 |                   240 |                          0 | 2025-06-18 18:00:00-04:00 | 2025-06-19 12:59:00-04:00 | False             | early_close               |
-| 2025-07-03 00:00:00 | MNQU5           |     1155 |               225 |                   0 |                   225 |                          0 | 2025-07-02 18:00:00-04:00 | 2025-07-03 13:14:00-04:00 | False             | early_close               |
-| 2025-07-04 00:00:00 | MNQU5           |     1140 |               240 |                   0 |                   240 |                          0 | 2025-07-03 18:00:00-04:00 | 2025-07-04 12:59:00-04:00 | False             | early_close               |
-| 2025-09-01 00:00:00 | MNQU5           |     1140 |               240 |                   0 |                   240 |                          0 | 2025-08-31 18:00:00-04:00 | 2025-09-01 12:59:00-04:00 | False             | early_close               |
-| 2025-11-27 00:00:00 | MNQZ5           |     1140 |               240 |                   0 |                   240 |                          0 | 2025-11-26 18:00:00-05:00 | 2025-11-27 12:59:00-05:00 | False             | early_close               |
-| 2025-11-28 00:00:00 | MNQZ5           |      510 |               870 |                   0 |                   225 |                        645 | 2025-11-27 18:00:00-05:00 | 2025-11-28 13:14:00-05:00 | True              | early_close+internal_gaps |
-| 2025-12-24 00:00:00 | MNQH6           |     1155 |               225 |                   0 |                   225 |                          0 | 2025-12-23 18:00:00-05:00 | 2025-12-24 13:14:00-05:00 | False             | early_close               |
-| 2026-01-19 00:00:00 | MNQH6           |     1140 |               240 |                   0 |                   240 |                          0 | 2026-01-18 18:00:00-05:00 | 2026-01-19 12:59:00-05:00 | False             | early_close               |
-| 2026-02-16 00:00:00 | MNQH6           |     1140 |               240 |                   0 |                   240 |                          0 | 2026-02-15 18:00:00-05:00 | 2026-02-16 12:59:00-05:00 | False             | early_close               |
-| 2026-04-03 00:00:00 | MNQM6           |      915 |               465 |                   0 |                   465 |                          0 | 2026-04-02 18:00:00-04:00 | 2026-04-03 09:14:00-04:00 | False             | early_close               |
-| 2026-05-25 00:00:00 | MNQM6           |     1140 |               240 |                   0 |                   240 |                          0 | 2026-05-24 18:00:00-04:00 | 2026-05-25 12:59:00-04:00 | True              | early_close               |
-| 2026-06-19 00:00:00 | MNQU6           |     1140 |               240 |                   0 |                   240 |                          0 | 2026-06-18 18:00:00-04:00 | 2026-06-19 12:59:00-04:00 | False             | early_close               |
-| 2026-07-03 00:00:00 | MNQU6           |     1140 |               240 |                   0 |                   240 |                          0 | 2026-07-02 18:00:00-04:00 | 2026-07-03 12:59:00-04:00 | False             | early_close               |
-| 2026-09-07 00:00:00 | MNQU6           |     1140 |               240 |                   0 |                   240 |                          0 | 2026-09-06 18:00:00-04:00 | 2026-09-07 12:59:00-04:00 | False             | early_close               |
-| 2026-10-21 00:00:00 | MNQZ6           |      120 |              1260 |                   0 |                  1260 |                          0 | 2026-10-20 18:00:00-04:00 | 2026-10-20 19:59:00-04:00 | False             | truncated_final_session   |
+| trading_date        | active_symbol   |   n_bars |   missing_minutes |   late_open_minutes |   early_close_minutes |   internal_missing_minutes | first_bar_ny              | last_bar_ny               | observed_session_status                     | calendar_status     |
+|:--------------------|:----------------|---------:|------------------:|--------------------:|----------------------:|---------------------------:|:--------------------------|:--------------------------|:--------------------------------------------|:--------------------|
+| 2022-11-24 00:00:00 | MNQZ2           |     1140 |               240 |                   0 |                   240 |                          0 | 2022-11-23 18:00:00-05:00 | 2022-11-24 12:59:00-05:00 | observed_early_close                        | calendar_unverified |
+| 2022-11-25 00:00:00 | MNQZ2           |     1155 |               225 |                   0 |                   225 |                          0 | 2022-11-24 18:00:00-05:00 | 2022-11-25 13:14:00-05:00 | observed_early_close                        | calendar_unverified |
+| 2022-12-13 00:00:00 | MNQH3           |     1379 |                 1 |                   0 |                     0 |                          1 | 2022-12-12 18:00:00-05:00 | 2022-12-13 16:59:00-05:00 | observed_internal_gaps                      | calendar_unverified |
+| 2023-01-16 00:00:00 | MNQH3           |     1140 |               240 |                   0 |                   240 |                          0 | 2023-01-15 18:00:00-05:00 | 2023-01-16 12:59:00-05:00 | observed_early_close                        | calendar_unverified |
+| 2023-02-20 00:00:00 | MNQH3           |     1140 |               240 |                   0 |                   240 |                          0 | 2023-02-19 18:00:00-05:00 | 2023-02-20 12:59:00-05:00 | observed_early_close                        | calendar_unverified |
+| 2023-04-07 00:00:00 | MNQM3           |      915 |               465 |                   0 |                   465 |                          0 | 2023-04-06 18:00:00-04:00 | 2023-04-07 09:14:00-04:00 | observed_early_close                        | calendar_unverified |
+| 2023-05-29 00:00:00 | MNQM3           |     1140 |               240 |                   0 |                   240 |                          0 | 2023-05-28 18:00:00-04:00 | 2023-05-29 12:59:00-04:00 | observed_early_close                        | calendar_unverified |
+| 2023-06-19 00:00:00 | MNQU3           |     1140 |               240 |                   0 |                   240 |                          0 | 2023-06-18 18:00:00-04:00 | 2023-06-19 12:59:00-04:00 | observed_early_close                        | calendar_unverified |
+| 2023-07-03 00:00:00 | MNQU3           |     1155 |               225 |                   0 |                   225 |                          0 | 2023-07-02 18:00:00-04:00 | 2023-07-03 13:14:00-04:00 | observed_early_close                        | calendar_unverified |
+| 2023-07-04 00:00:00 | MNQU3           |     1139 |               241 |                   0 |                   240 |                          1 | 2023-07-03 18:00:00-04:00 | 2023-07-04 12:59:00-04:00 | observed_early_close+observed_internal_gaps | calendar_unverified |
+| 2023-09-04 00:00:00 | MNQU3           |     1140 |               240 |                   0 |                   240 |                          0 | 2023-09-03 18:00:00-04:00 | 2023-09-04 12:59:00-04:00 | observed_early_close                        | calendar_unverified |
+| 2023-11-23 00:00:00 | MNQZ3           |     1140 |               240 |                   0 |                   240 |                          0 | 2023-11-22 18:00:00-05:00 | 2023-11-23 12:59:00-05:00 | observed_early_close                        | calendar_unverified |
+| 2023-11-24 00:00:00 | MNQZ3           |     1155 |               225 |                   0 |                   225 |                          0 | 2023-11-23 18:00:00-05:00 | 2023-11-24 13:14:00-05:00 | observed_early_close                        | calendar_unverified |
+| 2024-01-15 00:00:00 | MNQH4           |     1140 |               240 |                   0 |                   240 |                          0 | 2024-01-14 18:00:00-05:00 | 2024-01-15 12:59:00-05:00 | observed_early_close                        | calendar_unverified |
+| 2024-02-19 00:00:00 | MNQH4           |     1140 |               240 |                   0 |                   240 |                          0 | 2024-02-18 18:00:00-05:00 | 2024-02-19 12:59:00-05:00 | observed_early_close                        | calendar_unverified |
+| 2024-05-27 00:00:00 | MNQM4           |     1140 |               240 |                   0 |                   240 |                          0 | 2024-05-26 18:00:00-04:00 | 2024-05-27 12:59:00-04:00 | observed_early_close                        | calendar_unverified |
+| 2024-06-19 00:00:00 | MNQU4           |     1140 |               240 |                   0 |                   240 |                          0 | 2024-06-18 18:00:00-04:00 | 2024-06-19 12:59:00-04:00 | observed_early_close                        | calendar_unverified |
+| 2024-07-03 00:00:00 | MNQU4           |     1155 |               225 |                   0 |                   225 |                          0 | 2024-07-02 18:00:00-04:00 | 2024-07-03 13:14:00-04:00 | observed_early_close                        | calendar_unverified |
+| 2024-07-04 00:00:00 | MNQU4           |     1140 |               240 |                   0 |                   240 |                          0 | 2024-07-03 18:00:00-04:00 | 2024-07-04 12:59:00-04:00 | observed_early_close                        | calendar_unverified |
+| 2024-09-02 00:00:00 | MNQU4           |     1140 |               240 |                   0 |                   240 |                          0 | 2024-09-01 18:00:00-04:00 | 2024-09-02 12:59:00-04:00 | observed_early_close                        | calendar_unverified |
+| 2024-11-28 00:00:00 | MNQZ4           |     1140 |               240 |                   0 |                   240 |                          0 | 2024-11-27 18:00:00-05:00 | 2024-11-28 12:59:00-05:00 | observed_early_close                        | calendar_unverified |
+| 2024-11-29 00:00:00 | MNQZ4           |     1155 |               225 |                   0 |                   225 |                          0 | 2024-11-28 18:00:00-05:00 | 2024-11-29 13:14:00-05:00 | observed_early_close                        | calendar_unverified |
+| 2024-12-24 00:00:00 | MNQH5           |     1155 |               225 |                   0 |                   225 |                          0 | 2024-12-23 18:00:00-05:00 | 2024-12-24 13:14:00-05:00 | observed_early_close                        | calendar_unverified |
+| 2025-01-09 00:00:00 | MNQH5           |      930 |               450 |                   0 |                   450 |                          0 | 2025-01-08 18:00:00-05:00 | 2025-01-09 09:29:00-05:00 | observed_early_close                        | calendar_unverified |
+| 2025-01-20 00:00:00 | MNQH5           |     1140 |               240 |                   0 |                   240 |                          0 | 2025-01-19 18:00:00-05:00 | 2025-01-20 12:59:00-05:00 | observed_early_close                        | calendar_unverified |
+| 2025-02-17 00:00:00 | MNQH5           |     1140 |               240 |                   0 |                   240 |                          0 | 2025-02-16 18:00:00-05:00 | 2025-02-17 12:59:00-05:00 | observed_early_close                        | calendar_unverified |
+| 2025-04-02 00:00:00 | MNQM5           |     1379 |                 1 |                   0 |                     0 |                          1 | 2025-04-01 18:00:00-04:00 | 2025-04-02 16:59:00-04:00 | observed_internal_gaps                      | calendar_unverified |
+| 2025-04-03 00:00:00 | MNQM5           |     1378 |                 2 |                   2 |                     0 |                          0 | 2025-04-02 18:02:00-04:00 | 2025-04-03 16:59:00-04:00 | observed_late_open                          | calendar_unverified |
+| 2025-05-26 00:00:00 | MNQM5           |     1140 |               240 |                   0 |                   240 |                          0 | 2025-05-25 18:00:00-04:00 | 2025-05-26 12:59:00-04:00 | observed_early_close                        | calendar_unverified |
+| 2025-06-19 00:00:00 | MNQU5           |     1140 |               240 |                   0 |                   240 |                          0 | 2025-06-18 18:00:00-04:00 | 2025-06-19 12:59:00-04:00 | observed_early_close                        | calendar_unverified |
+| 2025-07-03 00:00:00 | MNQU5           |     1155 |               225 |                   0 |                   225 |                          0 | 2025-07-02 18:00:00-04:00 | 2025-07-03 13:14:00-04:00 | observed_early_close                        | calendar_unverified |
+| 2025-07-04 00:00:00 | MNQU5           |     1140 |               240 |                   0 |                   240 |                          0 | 2025-07-03 18:00:00-04:00 | 2025-07-04 12:59:00-04:00 | observed_early_close                        | calendar_unverified |
+| 2025-09-01 00:00:00 | MNQU5           |     1140 |               240 |                   0 |                   240 |                          0 | 2025-08-31 18:00:00-04:00 | 2025-09-01 12:59:00-04:00 | observed_early_close                        | calendar_unverified |
+| 2025-11-27 00:00:00 | MNQZ5           |     1140 |               240 |                   0 |                   240 |                          0 | 2025-11-26 18:00:00-05:00 | 2025-11-27 12:59:00-05:00 | observed_early_close                        | calendar_unverified |
+| 2025-11-28 00:00:00 | MNQZ5           |      510 |               870 |                   0 |                   225 |                        645 | 2025-11-27 18:00:00-05:00 | 2025-11-28 13:14:00-05:00 | observed_early_close+observed_internal_gaps | calendar_unverified |
+| 2025-12-24 00:00:00 | MNQH6           |     1155 |               225 |                   0 |                   225 |                          0 | 2025-12-23 18:00:00-05:00 | 2025-12-24 13:14:00-05:00 | observed_early_close                        | calendar_unverified |
+| 2026-01-19 00:00:00 | MNQH6           |     1140 |               240 |                   0 |                   240 |                          0 | 2026-01-18 18:00:00-05:00 | 2026-01-19 12:59:00-05:00 | observed_early_close                        | calendar_unverified |
+| 2026-02-16 00:00:00 | MNQH6           |     1140 |               240 |                   0 |                   240 |                          0 | 2026-02-15 18:00:00-05:00 | 2026-02-16 12:59:00-05:00 | observed_early_close                        | calendar_unverified |
+| 2026-04-03 00:00:00 | MNQM6           |      915 |               465 |                   0 |                   465 |                          0 | 2026-04-02 18:00:00-04:00 | 2026-04-03 09:14:00-04:00 | observed_early_close                        | calendar_unverified |
+| 2026-05-25 00:00:00 | MNQM6           |     1140 |               240 |                   0 |                   240 |                          0 | 2026-05-24 18:00:00-04:00 | 2026-05-25 12:59:00-04:00 | observed_early_close                        | calendar_unverified |
+| 2026-06-19 00:00:00 | MNQU6           |     1140 |               240 |                   0 |                   240 |                          0 | 2026-06-18 18:00:00-04:00 | 2026-06-19 12:59:00-04:00 | observed_early_close                        | calendar_unverified |
+| 2026-07-03 00:00:00 | MNQU6           |     1140 |               240 |                   0 |                   240 |                          0 | 2026-07-02 18:00:00-04:00 | 2026-07-03 12:59:00-04:00 | observed_early_close                        | calendar_unverified |
+| 2026-09-07 00:00:00 | MNQU6           |     1140 |               240 |                   0 |                   240 |                          0 | 2026-09-06 18:00:00-04:00 | 2026-09-07 12:59:00-04:00 | observed_early_close                        | calendar_unverified |
+| 2026-10-21 00:00:00 | MNQZ6           |      120 |              1260 |                   0 |                  1260 |                          0 | 2026-10-20 18:00:00-04:00 | 2026-10-20 19:59:00-04:00 | truncated_final_session                     | calendar_unverified |
 
 ## Gaps between consecutive bars
 
@@ -98,21 +100,24 @@
 | 2022-12-13_cpi_missing_0831         | 2022-12-13 08:30:00-05:00 | 2022-12-13 08:32:00-05:00 |                          1 |                          1 | none          | True       | True                  |
 | 2025-04-02_missing_1631             | 2025-04-02 16:30:00-04:00 | 2025-04-02 16:32:00-04:00 |                          1 |                          1 | none          | True       | True                  |
 
-## Vendor-degraded sessions (Databento condition.json)
+## Vendor condition flags vs observed completeness (independent attributes)
 
-| trading_date        | active_symbol   |   n_bars |   missing_minutes | session_status            |
-|:--------------------|:----------------|---------:|------------------:|:--------------------------|
-| 2024-09-18 00:00:00 | MNQZ4           |     1380 |                 0 | complete                  |
-| 2024-09-19 00:00:00 | MNQZ4           |     1380 |                 0 | complete                  |
-| 2025-09-17 00:00:00 | MNQZ5           |     1380 |                 0 | complete                  |
-| 2025-09-18 00:00:00 | MNQZ5           |     1380 |                 0 | complete                  |
-| 2025-09-24 00:00:00 | MNQZ5           |     1380 |                 0 | complete                  |
-| 2025-09-25 00:00:00 | MNQZ5           |     1380 |                 0 | complete                  |
-| 2025-11-28 00:00:00 | MNQZ5           |      510 |               870 | early_close+internal_gaps |
-| 2026-03-16 00:00:00 | MNQH6           |     1380 |                 0 | complete                  |
-| 2026-03-17 00:00:00 | MNQH6           |     1380 |                 0 | complete                  |
-| 2026-04-10 00:00:00 | MNQM6           |     1380 |                 0 | complete                  |
-| 2026-05-25 00:00:00 | MNQM6           |     1140 |               240 | early_close               |
+- Sessions whose UTC span overlaps a Databento 'degraded' UTC date: 11; of these, observed complete: 9; with observed missing bars inside the degraded window: 1.
+- A vendor flag never changes eligibility by itself; eligibility depends only on observed bars.
+
+| trading_date        | active_symbol   | vendor_degraded_utc_dates   |   n_bars |   missing_minutes |   missing_minutes_in_degraded_utc_window | vendor_degraded_with_observed_loss   | observed_session_status                     |
+|:--------------------|:----------------|:----------------------------|---------:|------------------:|-----------------------------------------:|:-------------------------------------|:--------------------------------------------|
+| 2024-09-18 00:00:00 | MNQZ4           | 2024-09-18                  |     1380 |                 0 |                                        0 | False                                | complete                                    |
+| 2024-09-19 00:00:00 | MNQZ4           | 2024-09-18                  |     1380 |                 0 |                                        0 | False                                | complete                                    |
+| 2025-09-17 00:00:00 | MNQZ5           | 2025-09-17                  |     1380 |                 0 |                                        0 | False                                | complete                                    |
+| 2025-09-18 00:00:00 | MNQZ5           | 2025-09-17                  |     1380 |                 0 |                                        0 | False                                | complete                                    |
+| 2025-09-24 00:00:00 | MNQZ5           | 2025-09-24                  |     1380 |                 0 |                                        0 | False                                | complete                                    |
+| 2025-09-25 00:00:00 | MNQZ5           | 2025-09-24                  |     1380 |                 0 |                                        0 | False                                | complete                                    |
+| 2025-11-28 00:00:00 | MNQZ5           | 2025-11-28                  |      510 |               870 |                                      870 | True                                 | observed_early_close+observed_internal_gaps |
+| 2026-03-16 00:00:00 | MNQH6           | 2026-03-15;2026-03-16       |     1380 |                 0 |                                        0 | False                                | complete                                    |
+| 2026-03-17 00:00:00 | MNQH6           | 2026-03-16                  |     1380 |                 0 |                                        0 | False                                | complete                                    |
+| 2026-04-10 00:00:00 | MNQM6           | 2026-04-10                  |     1380 |                 0 |                                        0 | False                                | complete                                    |
+| 2026-05-25 00:00:00 | MNQM6           | 2026-05-24                  |     1140 |               240 |                                        0 | False                                | observed_early_close                        |
 
 ## Abnormal price discontinuities and roll boundaries
 
@@ -139,11 +144,11 @@
 
 ## Window eligibility rule
 
-A session's window (RTH, London SB, NY AM SB, NY PM SB) is eligible only if every minute of the half-open window has a bar and the session is not the truncated final session. Bars carry `eligible_<window>` so detectors can skip ineligible windows. `consecutive_prev` is False on any bar that does not follow its predecessor by exactly one minute.
+A session's window (RTH, London SB, NY AM SB, NY PM SB) is eligible only if every minute of the half-open window has a bar, the session is not the truncated final session, and the session's contract selection is causal (not the first session). Bars carry `eligible_<window>` so detectors can skip ineligible windows. `consecutive_prev` is False on any bar that does not follow its predecessor by exactly one minute.
 
 | window    |   eligible_sessions |   ineligible_sessions |
 |:----------|--------------------:|----------------------:|
-| rth       |                1007 |                    41 |
-| sb_london |                1046 |                     2 |
-| sb_ny_am  |                1044 |                     4 |
-| sb_ny_pm  |                1007 |                    41 |
+| rth       |                1006 |                    42 |
+| sb_london |                1045 |                     3 |
+| sb_ny_am  |                1043 |                     5 |
+| sb_ny_pm  |                1006 |                    42 |
