@@ -218,7 +218,7 @@ def test_displacement_candle_extreme_stop_long_and_short(sessions, spec):
     c = cfg(stop=StopConfig(type="displacement_candle_extreme", buffer_ticks=1))
     tr, _ = simulate(s, b, c, spec, None, ts("2024-05-15 16:00"), NOROLL)
     assert tr["stop_price"] == 97.25 and tr["planned_risk_points"] == 3.75 and tr["target_price"] == 108.5 and tr["stop_type"] == "displacement_candle_extreme"
-    assert tr["stop_ref_displacement_ts_utc"] == ts("2024-05-15 10:06")
+    assert tr["stop_ref_displacement_ts_utc"] == ts("2024-05-15 10:06") and tr["stop_ref_price"] == 97.5
     sb = make_setup(direction="bearish", upper=102.0, lower=100.0)   # entry = midpoint rounded up = 101.0
     sb.stop_ref_displacement_ts_utc = ts("2024-05-15 10:06"); sb.stop_ref_displacement_confirmation_ts_utc = ts("2024-05-15 10:07"); sb.stop_ref_displacement_timeframe = "1m"
     assert displacement_candle_extreme(sb, b) == (104.0, "ok")
@@ -244,7 +244,7 @@ def test_displacement_candle_extreme_rejects_without_substitution(sessions, spec
     ohlc = [FLAT] * 6 + [(103.0, 106.0, 102.5, 105.5)] + [FLAT] * 60
     s2 = make_setup(); s2.stop_ref_displacement_ts_utc = ts("2024-05-15 10:06"); s2.stop_ref_displacement_confirmation_ts_utc = ts("2024-05-15 10:07"); s2.stop_ref_displacement_timeframe = "1m"
     tr, nd = run(sessions, spec, ohlc, c=c, setup=s2)
-    assert tr is None and "stop_invalid" in nd["reason"]
+    assert tr is None and "stop_invalid" in nd["reason"] and nd["stop_ref_price"] == 102.5 and nd["stop_ref_displacement_ts_utc"] == ts("2024-05-15 10:06")
     # reference candle not completed at setup time -> rejected
     s3 = make_setup(); s3.stop_ref_displacement_ts_utc = ts("2024-05-15 10:10"); s3.stop_ref_displacement_confirmation_ts_utc = ts("2024-05-15 10:11"); s3.stop_ref_displacement_timeframe = "1m"
     tr, nd = run(sessions, spec, [FLAT] * 70, c=c, setup=s3)

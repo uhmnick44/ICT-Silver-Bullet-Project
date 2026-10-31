@@ -110,6 +110,22 @@ and hash, Layer 2 config hash, Layer 1 config hash and data content hash, featur
 (cache/computed), development range, `holdout_accessed: false`, trade and no-trade content hashes,
 software versions). Trades carry `trade_id`, `config_hash` and `series_id`.
 
+## Final Layer 3 decisions (approved)
+
+These are documented implementation decisions of this lab, not verified rules of the original research.
+
+1. `displacement_swing` stays disabled: no structural definition is established by the available
+   methodology; nothing is invented or substituted. `displacement_candle_extreme` is retained for the
+   verification baseline and for explicitly labelled future experiments.
+2. Roll-spanning trades are flagged and excluded; no synthetic rollover execution, no stitching across
+   contracts. Excluded trades are written separately to `excluded_trades.csv` and counted in the manifest.
+3. `displacement_candle_extreme`: most recent qualifying direction-matching displacement candle after the
+   confirmed sweep and no later than FVG confirmation; long stop = candle low − 1 tick, short stop =
+   candle high + 1 tick; confirmed features only; frozen at setup; setups without a qualifying candle or
+   with a non-positive stop distance are rejected; the selected candle timestamp
+   (`stop_ref_displacement_ts_utc`) and reference price (`stop_ref_price`) are recorded on every trade
+   and on every stop-gate rejection.
+
 ## Resolved (Layer 3 ambiguity resolution)
 
 1. Displacement-associated stop → `displacement_candle_extreme` for the verification baseline;

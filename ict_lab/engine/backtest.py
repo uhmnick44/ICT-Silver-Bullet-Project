@@ -105,6 +105,8 @@ def write_backtest(result: dict, cfg: Layer3Config, store: FeatureStore, l2cfg, 
     tr, nd = result["trades"], result["no_trade"]
     tr.to_parquet(out / "trades.parquet", index=False); tr.to_csv(out / "trades.csv", index=False)
     nd.to_csv(out / "no_trade_log.csv", index=False)
+    if len(tr):
+        tr[tr["excluded_by_roll_policy"]].to_csv(out / "excluded_trades.csv", index=False)   # reported separately, never stitched
     l1m = json.loads((store.l1cfg.resolve("clean_dir") / "manifest.json").read_text())
     manifest = {"generated_utc": datetime.now(timezone.utc).isoformat(), "layer3_config_hash": cfg.config_hash, "layer3_config": cfg.to_dict(),
                 "layer2_config_hash": l2cfg.config_hash, "layer1_config_hash": l1m["config_hash"],

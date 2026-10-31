@@ -140,8 +140,11 @@ def simulate(setup: Setup, bars: BarArrays, cfg: Layer3Config, spec: InstrumentS
     tick = spec.tick_size; qty = cfg.sizing.contracts
     limit = entry_limit_price(setup, cfg, spec)
     stop, why = stop_price(setup, limit, cfg, spec, bars)
+    stop_ref_price = displacement_candle_extreme(setup, bars)[0] if cfg.stop.type == "displacement_candle_extreme" else \
+        (setup.fvg_lower if setup.direction == "bullish" else setup.fvg_upper) if cfg.stop.type == "fvg_distal" else np.nan
     base = {"trading_date": setup.trading_date, "window": setup.window, "direction": setup.direction, "setup_ts_utc": setup.setup_ts_utc,
-            "entry_limit": limit}
+            "entry_limit": limit, "stop_type": cfg.stop.type, "stop_ref_price": stop_ref_price,
+            "stop_ref_displacement_ts_utc": setup.stop_ref_displacement_ts_utc}
     if stop is None:
         return None, {**base, "gate_failed": "stop", "reason": why}
     risk = (limit - stop) if bull else (stop - limit)
@@ -223,8 +226,8 @@ def simulate(setup: Setup, bars: BarArrays, cfg: Layer3Config, spec: InstrumentS
         "mss_id": setup.mss_id, "mss_break_ts_utc": setup.mss_break_ts_utc, "displacement_ts_utc": setup.displacement_ts_utc,
         "displacement_confirmation_ts_utc": setup.displacement_confirmation_ts_utc, "displacement_ratio": setup.displacement_ratio,
         "fvg_id": setup.fvg_id, "fvg_timeframe": setup.fvg_timeframe, "fvg_confirmation_ts_utc": setup.fvg_confirmation_ts_utc,
-        "fvg_upper": setup.fvg_upper, "fvg_lower": setup.fvg_lower, "bias": setup.bias, "stop_type": cfg.stop.type,
-        "stop_ref_displacement_ts_utc": setup.stop_ref_displacement_ts_utc, "stop_ref_displacement_timeframe": setup.stop_ref_displacement_timeframe,
+        "fvg_upper": setup.fvg_upper, "fvg_lower": setup.fvg_lower, "bias": setup.bias,
+        "stop_ref_displacement_timeframe": setup.stop_ref_displacement_timeframe,
         "stop_ref_displacement_ratio": setup.stop_ref_displacement_ratio,
         "order_submitted_ts_utc": setup.setup_ts_utc, "order_active_ts_utc": pd.Timestamp(bars.ts[i0], tz="UTC"),
         "marketable_at_activation": bool(marketable),
