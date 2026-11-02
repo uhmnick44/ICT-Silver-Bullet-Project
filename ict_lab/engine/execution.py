@@ -263,3 +263,72 @@ def simulate(setup: Setup, bars: BarArrays, cfg: Layer3Config, spec: InstrumentS
         "entry_bar_index": int(k), "exit_bar_index": int(j),
     }
     return trade, None
+
+
+# ----------------------------------------------------------------------------- shared exit resolution (null models reuse this)
+def resolve_exit(bars: BarArrays, k: int, bull: bool, entry_theo: float, stop: float, target: float | None, cfg: Layer3Config,
+                 spec: InstrumentSpec, iT: int) -> dict:
+    """Identical exit logic to simulate(): scan bars k..iT-1 for stop (touch, stop-first) and target (strict trade-through
+    or touch per config); otherwise time exit at the open of bar iT (or end_of_data)."""
+    tick = spec.tick_size; sgn = 1.0 if bull else -1.0
+    iT = max(iT, k + 1)
+    lo, hi = bars.l[k:iT], bars.h[k:iT]
+    stop_hit = (lo <= stop) if bull else (hi >= stop)
+    if target is None:
+        tgt_hit = np.zeros(len(lo), dtype=bool)
+    elif cfg.target.fill_rule == "touch":
+        tgt_hit = (hi >= target) if bull else (lo <= target)
+    else:
+        tgt_hit = (hi > target) if bull else (lo < target)
+    s_idx = int(np.argmax(stop_hit)) if stop_hit.any() else None
+    t_idx = int(np.argmax(tgt_hit)) if tgt_hit.any() else None
+    ambiguous = False
+    if s_idx is not None and (t_idx is None or s_idx <= t_idx):
+        j = k + s_idx; reason = "stop"; ambiguous = t_idx is not None and t_idx == s_idx
+        gap_through = (bars.o[j] < stop) if bull else (bars.o[j] > stop)
+        exit_theo = bars.o[j] if gap_through else stop; exit_slip = cfg.costs.stop_slippage_ticks * tick
+    elif t_idx is not None:
+        j = k + t_idx; reason = "target"; exit_theo = target; exit_slip = cfg.costs.target_slippage_ticks * tick
+    elif iT >= len(bars.ts):
+        j = len(bars.ts) - 1; reason = "end_of_data"; exit_theo = bars.c[j]; exit_slip = 0.0
+    else:
+        j = iT; reason = "time_exit_window" if cfg.exit.policy == "window_end" else "time_exit_rth"
+        exit_theo = bars.o[j]; exit_slip = cfg.costs.time_exit_slippage_ticks * tick
+    return {"j": j, "reason": reason, "exit_theo": float(exit_theo), "exit_slip": float(exit_slip), "ambiguous": bool(ambiguous)}
+
+
+def simulate_template(bars: BarArrays, cfg: Layer3Config, spec: InstrumentSpec, *, direction: str, k_activate: int, iE: int, iT: int,
+                      risk_points: float, target_r: float | None, entry_mode: str, limit: float | None = None) -> dict | None:
+    """Simulate a trade template for the null models with the production fill and exit rules.
+    entry_mode 'market': fill at the open of bar k_activate (first executable price), entry slippage adverse.
+    entry_mode 'limit' : production limit rules (strict trade-through, marketable-at-activation fills at the limit),
+                         expiring at iE. Stop = entry -/+ risk_points; target = entry +/- target_r * risk_points."""
+    bull = direction == "bullish"; sgn = 1.0 if bull else -1.0; tick = spec.tick_size; qty = cfg.sizing.contracts
+    if entry_mode == "market":
+        k = k_activate; entry_theo = float(bars.o[k])
+    else:
+        marketable = (bars.o[k_activate] < limit) if bull else (bars.o[k_activate] > limit)
+        if marketable:
+            k = k_activate
+        else:
+            seg = (bars.l[k_activate:iE] < limit) if bull else (bars.h[k_activate:iE] > limit)
+            if not seg.any():
+                return None
+            k = k_activate + int(np.argmax(seg))
+        entry_theo = float(limit)
+    stop = round_to_tick(entry_theo - sgn * risk_points, tick, "down" if bull else "up")
+    risk = (entry_theo - stop) if bull else (stop - entry_theo)
+    if risk <= 0:
+        return None
+    target = None if target_r is None else round_to_tick(entry_theo + sgn * target_r * risk, tick, "up" if bull else "down")
+    ex = resolve_exit(bars, k, bull, entry_theo, stop, target, cfg, spec, iT)
+    entry_slip = cfg.costs.entry_slippage_ticks * tick
+    gross_points = sgn * (ex["exit_theo"] - entry_theo)
+    gross_pnl = gross_points * spec.point_value * qty
+    slippage_cost = (entry_slip + ex["exit_slip"]) / tick * spec.tick_value * qty
+    commission = cfg.costs.per_side * 2 * qty
+    net_pnl = gross_pnl - slippage_cost - commission
+    return {"entry_index": int(k), "exit_index": int(ex["j"]), "entry_price": entry_theo, "stop_price": stop, "target_price": target, "exit_price": ex["exit_theo"],
+            "exit_reason": ex["reason"], "same_bar_ambiguous": ex["ambiguous"], "risk_points": risk, "gross_points": gross_points, "gross_pnl_usd": gross_pnl,
+            "net_pnl_usd": net_pnl, "net_r": net_pnl / (risk * spec.point_value * qty), "gross_r": gross_points / risk,
+            "trading_date": bars.trading_date[k], "exit_ts": bars.ts[ex["j"]], "entry_ts": bars.ts[k]}

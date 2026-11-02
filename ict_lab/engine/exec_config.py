@@ -152,7 +152,7 @@ class Layer3Config:
         if s.pending_order_policy not in PENDING_ORDER_POLICIES:
             raise ValueError("pending_order_policy must be keep_first")
         for w in s.windows:
-            if w not in ("sb_london", "sb_ny_am", "sb_ny_pm"):
+            if w not in ("sb_london", "sb_ny_am", "sb_ny_pm") and not w.startswith("oh_"):   # oh_HHMM: Null-B off-hour diagnostic windows
                 raise ValueError(f"unknown trading window {w}")
         if len(set(s.windows)) != len(s.windows):
             raise ValueError("duplicate trading windows")

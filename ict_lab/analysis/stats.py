@@ -9,11 +9,19 @@ NOT decided here (awaiting screenshot definitions): the bootstrap block length (
 no default), the raw p-value source fed into the FDR step (a required argument), grid values,
 sampling, null-model procedures, walk-forward folds.
 
-Annualization convention (documented choice, the brief allows one): `net_sharpe` is computed on the
-daily net P&L series in dollars over every development trading date in the evaluation range (dates
-without a trade contribute 0), annualized with sqrt(252). `per_trade_sharpe` (mean net R / std net R,
-not annualized) is reported alongside for reference. Trade frequency is trades per year with the
-calendar span of the evaluation range / 365.25.
+Annualization convention (researcher-selected, Layer 5 convention 2): `net_sharpe` is the annualized
+Sharpe of the daily net P&L series in dollars over the ELIGIBLE trading days passed in (dates with an
+eligible window for the configuration; days without a trade contribute 0), annualization factor
+sqrt(252), zero risk-free rate. `per_trade_sharpe` (mean net R / std net R, not annualized) is reported
+for reference. Trade frequency is trades per year with the calendar span of the eligible days / 365.25.
+
+Bootstrap (conventions 3-4): stationary bootstrap (Politis-Romano) with expected block length 10 trades
+(sensitivity 5 and 20), 1,000 resamples, fixed seed. The 95% CI for the mean is the percentile interval of
+the bootstrap means. The one-sided p-value for H1: mean > 0 is NULL-CENTRED: the series is shifted to
+mean zero, resampled, and p = P(bootstrap mean of the centred series >= observed mean). The CI and the
+p-value are reported separately. Dependence limitation: trades of different configurations overlap on
+the same bars, so the p-values across the population are positively dependent; BH is applied as a
+documented assumption of PRDS-type dependence, not proven independence.
 """
 from __future__ import annotations
 
@@ -27,11 +35,15 @@ MIN_NET_SHARPE = 0.5
 FDR_Q = 0.10
 BOOTSTRAP_RESAMPLES = 1000
 TRADING_DAYS_PER_YEAR = 252
+BLOCK_LENGTH = 10
+BLOCK_LENGTH_SENSITIVITY = (5, 20)
+BOOTSTRAP_SEED = 20261102
 
 
 # ----------------------------------------------------------------------------- metrics
 def performance_metrics(trades: pd.DataFrame, trading_dates: pd.Series | list, min_trades: int = MIN_TRADES) -> dict:
     """All metrics reflect transaction costs (net_* columns from the Layer 3 engine). Roll-excluded trades are dropped.
+    `trading_dates` must be the ELIGIBLE trading days of the configuration's windows (convention 2).
     Returns status 'ok' or 'insufficient_data' (metrics that cannot be computed are None, never fabricated)."""
     t = trades[~trades["excluded_by_roll_policy"]] if len(trades) and "excluded_by_roll_policy" in trades else trades
     dates = pd.DatetimeIndex(pd.to_datetime(pd.Series(trading_dates))).unique().sort_values()
@@ -82,30 +94,40 @@ def benjamini_hochberg(pvalues: np.ndarray | list, q: float = FDR_Q) -> tuple[np
 
 
 # ----------------------------------------------------------------------------- bootstrap
-def stationary_block_bootstrap(x: np.ndarray, block_length: float, n_resamples: int = BOOTSTRAP_RESAMPLES, seed: int = 20261102,
-                               alpha: float = 0.05) -> dict:
-    """Politis–Romano stationary bootstrap of the mean of x (net R per trade in chronological order).
-    Blocks have geometric lengths with mean `block_length` (p = 1/block_length), wrapping circularly, which
-    preserves temporal dependence. One-sided p-value for H1: mean > 0 is the fraction of bootstrap means <= 0.
-    The block length is a required input: the screenshot convention is not yet established."""
+def stationary_bootstrap_indices(n: int, block_length: float, n_resamples: int, rng: np.random.Generator) -> np.ndarray:
+    """(n_resamples, n) index matrix of the Politis-Romano stationary bootstrap, vectorised: at every position a new
+    block starts with probability 1/block_length at a uniformly random start; otherwise the index advances by one,
+    wrapping circularly. Geometric block lengths with the requested mean follow from the per-position restart rule."""
+    p = 1.0 / float(block_length)
+    restart = rng.random((n_resamples, n)) < p
+    restart[:, 0] = True
+    starts = rng.integers(0, n, size=(n_resamples, n))
+    pos = np.arange(n)
+    last = np.maximum.accumulate(np.where(restart, pos, 0), axis=1)          # position of the most recent restart
+    start_val = np.take_along_axis(starts, last, axis=1)
+    return (start_val + (pos - last)) % n
+
+
+def stationary_block_bootstrap(x: np.ndarray, block_length: float = BLOCK_LENGTH, n_resamples: int = BOOTSTRAP_RESAMPLES,
+                               seed: int = BOOTSTRAP_SEED, alpha: float = 0.05) -> dict:
+    """Stationary bootstrap of the mean of x (net R per trade in chronological order). Returns the percentile 95% CI of
+    the mean (reported separately) and a NULL-CENTRED one-sided p-value for H1: mean > 0."""
     x = np.asarray(x, dtype=float); n = len(x)
     if block_length is None or block_length <= 0:
-        raise ValueError("block_length must be a positive number (screenshot convention not yet established)")
+        raise ValueError("block_length must be a positive number")
     if n < 2:
-        return {"status": "insufficient_data", "n": n}
-    rng = np.random.default_rng(seed); p = 1.0 / float(block_length)
-    means = np.empty(n_resamples)
-    for b in range(n_resamples):
-        idx = np.empty(n, dtype=int); i = 0
-        while i < n:
-            start = int(rng.integers(0, n)); length = int(rng.geometric(p))
-            k = min(length, n - i)
-            idx[i:i + k] = (start + np.arange(k)) % n; i += k
-        means[b] = x[idx].mean()
+        return {"status": "insufficient_data", "n": n, "mean_net_r": float(x.mean()) if n else None, "ci_low": None, "ci_high": None,
+                "p_one_sided": None, "ci_above_zero": False, "block_length": float(block_length), "n_resamples": n_resamples, "seed": seed}
+    rng = np.random.default_rng(seed)
+    idx = stationary_bootstrap_indices(n, block_length, n_resamples, rng)
+    means = x[idx].mean(axis=1)                                   # bootstrap distribution of the mean (for the CI)
+    centred = (x - x.mean())[idx].mean(axis=1)                    # null distribution (same indices): mean-zero series
+    obs = float(x.mean())
     lo, hi = np.percentile(means, [100 * alpha / 2, 100 * (1 - alpha / 2)])
-    return {"status": "ok", "n": n, "mean_net_r": float(x.mean()), "boot_mean": float(means.mean()), "ci_low": float(lo), "ci_high": float(hi),
-            "p_one_sided": float((means <= 0).mean()), "ci_above_zero": bool(lo > 0), "block_length": float(block_length),
-            "n_resamples": n_resamples, "seed": seed, "alpha": alpha, "bootstrap_means": means}
+    p = float(((centred >= obs).sum() + 1) / (n_resamples + 1))   # add-one correction keeps p in (0, 1]
+    return {"status": "ok", "n": n, "mean_net_r": obs, "boot_mean": float(means.mean()), "ci_low": float(lo), "ci_high": float(hi),
+            "p_one_sided": p, "ci_above_zero": bool(lo > 0), "block_length": float(block_length), "n_resamples": n_resamples, "seed": seed,
+            "alpha": alpha, "bootstrap_means": means, "null_means": centred}
 
 
 # ----------------------------------------------------------------------------- qualification
