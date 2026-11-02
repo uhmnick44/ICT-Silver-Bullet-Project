@@ -211,3 +211,20 @@ python -m pytest ict_lab/tests -k l4
 Named configurations (`configs/strategies/`): `as_taught_5m`, `as_taught_1m`, `as_traded` — research
 baselines, not recommended strategies; all use the documented `displacement_candle_extreme` stop
 substitution. Multi-trade rules and counters are described in `docs/execution_assumptions.md`.
+
+
+## Layer 5 — parameter grid, statistics (partial, pending definitions)
+
+```bash
+python -m ict_lab.analysis.grid [--count N --seed S]   # full deduplicated grid by default -> analysis/layer5/
+python -m ict_lab.analysis.ablation                    # defined ablation steps + lookahead diagnostic
+python -m ict_lab.analysis.layer5_report               # analysis/layer5/layer5_status.md
+python -m pytest ict_lab/tests -k l5
+```
+
+Implemented: established-dimension grid with semantic deduplication, fixed-seed sampling (count and seed are
+explicit inputs), development-only sweep with metrics after costs (`analysis/stats.py`: metrics, screens,
+BH-FDR, stationary block bootstrap, qualification tiers). Not run pending screenshot definitions: FDR p-value
+source, bootstrap block length, null models A/B/C, ablation steps 1–3, cost/slippage sensitivity, walk-forward
+folds, subperiods, sample-size sensitivity. Roll-convention sensitivity and ES validation: not performed by
+decision. See `analysis/layer5/layer5_status.md`.

@@ -1,0 +1,47 @@
+{
+  "generated_utc": "2026-11-02T04:45:14.130586+00:00",
+  "base_signal": {
+    "windows": [
+      "sb_london",
+      "sb_ny_am",
+      "sb_ny_pm"
+    ],
+    "liquidity_universe": "bsl_ssl_15m",
+    "fvg_timeframe": "5m",
+    "min_fvg_points": 0.0,
+    "min_fvg_atr": 0.0,
+    "require_mss": false,
+    "require_displacement": true,
+    "displacement_threshold": 1.5,
+    "require_bias": false,
+    "max_trades_per_window": 1
+  },
+  "steps": [
+    [
+      "1_fvg_only",
+      "NOT PERFORMED: FVG-only direction rule not established"
+    ],
+    [
+      "2_fvg_sweep",
+      "NOT PERFORMED: no-window search universe not established"
+    ],
+    [
+      "3_fvg_sweep_displacement",
+      "NOT PERFORMED: no-window search universe not established"
+    ],
+    [
+      "4_fvg_sweep_displacement_window",
+      "none"
+    ],
+    [
+      "5_plus_15m_bias",
+      "swing_15m_structure"
+    ],
+    [
+      "diagnostic_perfect_future_bias_LOOKAHEAD",
+      "perfect_window"
+    ]
+  ],
+  "holdout_accessed": false,
+  "note": "steps 1-3 not performed pending definitions; the perfect-future-bias row is a lookahead diagnostic only"
+}

@@ -19,3 +19,5 @@ ict_lab/runs/features_full_run.log
 ict_lab/runs/backtests/**/*.parquet
 ict_lab/runs/backtests/**/setup_log.csv
 ict_lab/runs/backtests/**/window_stats.csv
+ict_lab/analysis/layer5/sweep_trades.parquet
+ict_lab/runs/layer5_sweep.log

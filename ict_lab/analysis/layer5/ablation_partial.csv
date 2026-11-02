@@ -1,0 +1,7 @@
+step,status,note,lookahead,config_hash,n_trades,net_expectancy_r,net_sharpe,net_pnl_usd,profit_factor,max_drawdown_usd,max_drawdown_r,win_rate,n_ambiguous
+1_fvg_only,not_performed,NOT PERFORMED: FVG-only direction rule not established,False,,,,,,,,,,
+2_fvg_sweep,not_performed,NOT PERFORMED: no-window search universe not established,False,,,,,,,,,,
+3_fvg_sweep_displacement,not_performed,NOT PERFORMED: no-window search universe not established,False,,,,,,,,,,
+4_fvg_sweep_displacement_window,ok,,False,c39ada6b79c4e6ca52ec6745a9cc0013246cbe7586ef5ccd96bce46bc9aee965,130.0,-0.24743268215708433,-0.8426766970089572,-951.3999999999996,0.7540559823801302,1149.2399999999998,35.0421072962202,0.4461538461538462,6.0
+5_plus_15m_bias,insufficient_data,,False,3d086396ebab7bfefe9c1441418128cf3ebaf98635662b7085085fd4f4466c25,87.0,-0.35560977406029515,-1.1474445158136743,-1048.0599999999997,0.6221518804799261,1124.8799999999999,32.35390748610282,0.40229885057471265,4.0
+diagnostic_perfect_future_bias_LOOKAHEAD,insufficient_data,LOOKAHEAD / INVALID FOR LIVE TRADING — never a candidate,True,20f03280b57d7b9b0abf5e428d41ee7c830d244af5ab00ac096936898af60bb0,49.0,0.2266635873496554,0.6067473124682398,576.3800000000002,1.3765122416451092,407.32,3.9226607894115335,0.6326530612244898,0.0
