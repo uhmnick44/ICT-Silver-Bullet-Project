@@ -1,0 +1,183 @@
+{
+  "generated_utc": "2026-11-02T05:51:09.595680+00:00",
+  "dimensions": {
+    "fvg_timeframe": [
+      "1m",
+      "5m",
+      "15m"
+    ],
+    "liquidity_universe": [
+      "session_refs",
+      "session_refs_plus_swings",
+      "bsl_ssl_15m",
+      "swings_only"
+    ],
+    "bias_detector": [
+      "none",
+      "prev_day_oc",
+      "swing_15m_structure",
+      "swing_1h_structure",
+      "daily_ma20_slope"
+    ],
+    "displacement_threshold": [
+      1.0,
+      1.5,
+      2.0,
+      3.0
+    ],
+    "require_mss": [
+      false,
+      true
+    ],
+    "entry_location": [
+      "proximal",
+      "midpoint",
+      "distal"
+    ],
+    "target_r": [
+      1.0
+    ],
+    "windows": [
+      [
+        "sb_london"
+      ],
+      [
+        "sb_ny_am"
+      ],
+      [
+        "sb_ny_pm"
+      ],
+      [
+        "sb_london",
+        "sb_ny_am",
+        "sb_ny_pm"
+      ]
+    ],
+    "max_trades_per_window": [
+      1,
+      "unlimited"
+    ]
+  },
+  "fixed": {
+    "min_fvg_points": 0.0,
+    "min_fvg_atr": 0.0,
+    "max_confirmation_bars": 3,
+    "min_penetration_ticks": 1,
+    "stop_type": "liquidity_sweep_extreme",
+    "stop_buffer_ticks": 1,
+    "exit_policy": "rth_end",
+    "target_type": "fixed_r"
+  },
+  "counts": {
+    "generated": 11520,
+    "deduplicated": 8640,
+    "sampled": 8640,
+    "evaluated": 8640
+  },
+  "sampling": {
+    "count": null,
+    "seed": null,
+    "note": "screenshot sample count and seed unverified; full deduplicated grid evaluated"
+  },
+  "series_id": "mnq_volcross_next_session_backadj_v1",
+  "roll_convention": "lab_volume_crossover_next_session_v1",
+  "layer1_config_hash": "06eb8453396d521786b22379b0f35470a0527a228d760c76071fef6edbd046e5",
+  "layer1_source_hashes": {
+    "glbx-mdp3-20221001-20251001.ohlcv-1m.MNQH3-MNQM3.dbn.zst": "311ab59b406cdccf61d039d205a5ef308126ab1b46789537172c81beeeffb3fa",
+    "glbx-mdp3-20221001-20251001.ohlcv-1m.MNQH3-MNQU3.dbn.zst": "d2b5ac85cb1be5225c9cf5e53956ed4f4fa3aa2676feeb8922c3a60b6422fb18",
+    "glbx-mdp3-20221001-20251001.ohlcv-1m.MNQH3.dbn.zst": "5fa7e76f2345f7aaccbe9c225c519a59e189d4d69d40d759f1e9ec3ac44b0d64",
+    "glbx-mdp3-20221001-20251001.ohlcv-1m.MNQH4-MNQM4.dbn.zst": "b7b6211c6c7119f1828b5ca1643786b78c41bd853e021c1f8dc7c529069cd77b",
+    "glbx-mdp3-20221001-20251001.ohlcv-1m.MNQH4-MNQU4.dbn.zst": "68016f6ecc650576fbbc40e60c098b43a5c33028000becb7e6d53e01f5680f75",
+    "glbx-mdp3-20221001-20251001.ohlcv-1m.MNQH4.dbn.zst": "333f80f456dd85253bdabe4fd64cb6a162d9688f801e701c14f55a93e95be032",
+    "glbx-mdp3-20221001-20251001.ohlcv-1m.MNQH5-MNQM5.dbn.zst": "80b2f84c9dae8f69ea67ff54e028debbfa400e9162982989b352f70a8bd4bd03",
+    "glbx-mdp3-20221001-20251001.ohlcv-1m.MNQH5-MNQU5.dbn.zst": "b10273294ba3765c3491ac1030c5668295d2c5c9b3db3a631a87c500a3bba733",
+    "glbx-mdp3-20221001-20251001.ohlcv-1m.MNQH5-MNQZ5.dbn.zst": "c21b373c849114e64340ccf6d6ae0ce42627170b217ad4b1bd8a4861683c723c",
+    "glbx-mdp3-20221001-20251001.ohlcv-1m.MNQH5.dbn.zst": "d38beb2e539b1f5cd0d52ee6ece23ff697f2bf5328df535f8d8aa0e518bfb74b",
+    "glbx-mdp3-20221001-20251001.ohlcv-1m.MNQH6.dbn.zst": "1999b313fddb3be1c35bdacb2a0c0ce049bfe15f70ee3bba8e93e680342c25fd",
+    "glbx-mdp3-20221001-20251001.ohlcv-1m.MNQM3-MNQU3.dbn.zst": "abb148568bb67c34e55d5f9e7bacae077c1f4dab7c6ddb21159c8d1d87734138",
+    "glbx-mdp3-20221001-20251001.ohlcv-1m.MNQM3-MNQZ3.dbn.zst": "853a0355e4a9b7b0422e30a2403adc9d0621efda8b94413618747a3f1e07eaec",
+    "glbx-mdp3-20221001-20251001.ohlcv-1m.MNQM3.dbn.zst": "77762453a7645a2bb61623581614b9ea8801a232f68a2a739620ba8ac87ba7b8",
+    "glbx-mdp3-20221001-20251001.ohlcv-1m.MNQM4-MNQU4.dbn.zst": "fdd8c4830a2074a564d237f30d2fa8479eac769e98a4e2e97d8f3671629e5d1f",
+    "glbx-mdp3-20221001-20251001.ohlcv-1m.MNQM4-MNQZ4.dbn.zst": "3149d369bbadf4e32dd6d93437e33e2b3a9dee978f29322ef7c6597cfb5aba3c",
+    "glbx-mdp3-20221001-20251001.ohlcv-1m.MNQM4.dbn.zst": "98c60ba0ddba89dab9fb1debf282136a0105845564b7b48e9932d7153b7fa6a0",
+    "glbx-mdp3-20221001-20251001.ohlcv-1m.MNQM5-MNQU5.dbn.zst": "49d3d7e0c75ccc779069169e78e63495cf2200b96f9f487977b0a904d4602a37",
+    "glbx-mdp3-20221001-20251001.ohlcv-1m.MNQM5-MNQZ5.dbn.zst": "76449f5ee55a562e19e6d9f6548550dfa10f1598f23528eca5b718642508e611",
+    "glbx-mdp3-20221001-20251001.ohlcv-1m.MNQM5.dbn.zst": "f941576c94a62d29eb8420e53ad92bdb6d01cf78ddabbefa158b91c4fb3d476e",
+    "glbx-mdp3-20221001-20251001.ohlcv-1m.MNQM6.dbn.zst": "eee35df66fb0ced89d0582aaa0a692354b7deac0cc75f73dcd190075e19bf192",
+    "glbx-mdp3-20221001-20251001.ohlcv-1m.MNQU3-MNQH4.dbn.zst": "91664ac81882b91dabded1beacfb662a4be5116a8cc51f3330a3a639039d3001",
+    "glbx-mdp3-20221001-20251001.ohlcv-1m.MNQU3-MNQZ3.dbn.zst": "f2ecab3b5d81ddbcd92501cca7466f1cde59351e89aff7fc05a5fd50726850a2",
+    "glbx-mdp3-20221001-20251001.ohlcv-1m.MNQU3.dbn.zst": "7e2f2e45075e40fb9b9eded0b410c949572d15193dada2a6b3c071a2fd332830",
+    "glbx-mdp3-20221001-20251001.ohlcv-1m.MNQU4-MNQH5.dbn.zst": "b1339fadb455815adf26a4dc8d0544eb1d37b9f29404dc41b8b39e9b9b505583",
+    "glbx-mdp3-20221001-20251001.ohlcv-1m.MNQU4-MNQZ4.dbn.zst": "e62425474e514e5ca29d703c7fa5fcc33d995a06f5dafd982e8a1eda3656befb",
+    "glbx-mdp3-20221001-20251001.ohlcv-1m.MNQU4.dbn.zst": "381a0e2ea091a66f37242994641a7ae22a83e7fca9aebdb80a5e0f869a290d06",
+    "glbx-mdp3-20221001-20251001.ohlcv-1m.MNQU5-MNQH6.dbn.zst": "dedbbcec612a01bbd4dae8ccc031c18a7fa9b427c683902f25169eb2a2a1564c",
+    "glbx-mdp3-20221001-20251001.ohlcv-1m.MNQU5-MNQZ5.dbn.zst": "2916aeaf95aae6094b0b71cc7638e4e842e03df7d3f4e6b00a2dd17602df60e6",
+    "glbx-mdp3-20221001-20251001.ohlcv-1m.MNQU5.dbn.zst": "9c707e73bf137d19282385c890a3b94d5cb95af53645deda6fb1fcea59a312ce",
+    "glbx-mdp3-20221001-20251001.ohlcv-1m.MNQU6.dbn.zst": "ae177b4e68b353141edecd26110bb111b1ca24d6aea2bad82b39361aab71d4c2",
+    "glbx-mdp3-20221001-20251001.ohlcv-1m.MNQZ2-MNQH3.dbn.zst": "433e877f48955fde2422e50c3f437c2be7f8a8df907ce1445dfc73c162d95887",
+    "glbx-mdp3-20221001-20251001.ohlcv-1m.MNQZ2-MNQM3.dbn.zst": "cf8feed8a28ad31da9648c3bdc0e2b6d54d42bedcb6a79ebc8bc1633abcf31df",
+    "glbx-mdp3-20221001-20251001.ohlcv-1m.MNQZ2.dbn.zst": "6f7b0cce019f76f2703212f040bb6c4451ee8cea674ae92f5c1b33c777cf9795",
+    "glbx-mdp3-20221001-20251001.ohlcv-1m.MNQZ3-MNQH4.dbn.zst": "2b5bd394087253d18cb9b6bcde2c961564833c46d4811ebf6480a362d880da43",
+    "glbx-mdp3-20221001-20251001.ohlcv-1m.MNQZ3-MNQM4.dbn.zst": "8ecf50b396008947fff3ad46993fbf529faeb7cb5fc53c7990fb6f94dedf4684",
+    "glbx-mdp3-20221001-20251001.ohlcv-1m.MNQZ3.dbn.zst": "e9c504ecdaa0aa918eb67fd9f115be194a0be9a7412b5d1775958f2d8999ffc8",
+    "glbx-mdp3-20221001-20251001.ohlcv-1m.MNQZ4-MNQH5.dbn.zst": "ed5294f46a300186890326ad25b87b637c6f0b1acb44ca1a8d86a5794da8e44f",
+    "glbx-mdp3-20221001-20251001.ohlcv-1m.MNQZ4-MNQM5.dbn.zst": "d412c0632b62d14b4a8fc39ed48e07b54d3bbf14ef331e4c7e9e186bead7a491",
+    "glbx-mdp3-20221001-20251001.ohlcv-1m.MNQZ4.dbn.zst": "083afb358b96b1e82b790b13a9dc8867cb7d75a9bc4b75b3edf46c5a498a6787",
+    "glbx-mdp3-20221001-20251001.ohlcv-1m.MNQZ5-MNQH6.dbn.zst": "c755275fde6ce72ce3900f8786219c8ae2374861a8798bdc1a45c07dbb9f3781",
+    "glbx-mdp3-20221001-20251001.ohlcv-1m.MNQZ5-MNQM6.dbn.zst": "fce1af095a69245aff5d30e684a55875bcebfd01f4c287c347215d181aa2958c",
+    "glbx-mdp3-20221001-20251001.ohlcv-1m.MNQZ5.dbn.zst": "ab377b8883f4fe9e84e8c7bd5b114e26cf3554c18e5188035a3f4578007d0037",
+    "glbx-mdp3-20221001-20251001.ohlcv-1m.MNQZ6.dbn.zst": "87f8bdf476481033490846181d73a55a7d46887cf10e9136498cd677bf00433e",
+    "glbx-mdp3-20251001-20261020.ohlcv-1m.MNQH6-MNQM6.dbn.zst": "5efcadd5aa68718ff495b1fd14a7952e59afdbe4416e749db1e998d6878a4cc7",
+    "glbx-mdp3-20251001-20261020.ohlcv-1m.MNQH6-MNQU6.dbn.zst": "b67364ee5ddab043b4b9119801212770e1c581621ff8bf38c4953157e4b3c846",
+    "glbx-mdp3-20251001-20261020.ohlcv-1m.MNQH6-MNQZ6.dbn.zst": "06fee6ee4297b569c1ef203125fc0408123b14ad6ee24df0e6c6386c7a4c7d95",
+    "glbx-mdp3-20251001-20261020.ohlcv-1m.MNQH6.dbn.zst": "14119759f9b02762a2fecc7815f0ee2e479d7e5dd915f566d0950621a34002f8",
+    "glbx-mdp3-20251001-20261020.ohlcv-1m.MNQH7.dbn.zst": "ea6b4a415595c395599039dab344d72fd3dea945e73da5a4b8abf777d8edbf36",
+    "glbx-mdp3-20251001-20261020.ohlcv-1m.MNQM6-MNQH7.dbn.zst": "9375d1b459387f8d669b7f589f221771ce718b3ab07b61a74fae1cb4b1559c3a",
+    "glbx-mdp3-20251001-20261020.ohlcv-1m.MNQM6-MNQM7.dbn.zst": "8fc898748b2301378fde029edf748b0fe4e8931ee0071058dc7f75091c8c110d",
+    "glbx-mdp3-20251001-20261020.ohlcv-1m.MNQM6-MNQU6.dbn.zst": "b36e326996f5c1471cb702c7870277faf358e6b9b93a3391106d7b02b156cfa1",
+    "glbx-mdp3-20251001-20261020.ohlcv-1m.MNQM6-MNQZ6.dbn.zst": "ce5e82ec097c4eab77e76f5b0b7d334a4251790094229edfe5a5984c5b6c5e44",
+    "glbx-mdp3-20251001-20261020.ohlcv-1m.MNQM6.dbn.zst": "fdad230cdf4aecb8fcc0ea1fb474df3358c03380ddc0d3ead0eade2e312b9424",
+    "glbx-mdp3-20251001-20261020.ohlcv-1m.MNQM7.dbn.zst": "1fefed99eb4bcb0557cb04287960deb6e7324e009af8de65342d689c01d84485",
+    "glbx-mdp3-20251001-20261020.ohlcv-1m.MNQU6-MNQH7.dbn.zst": "247e4231aecb155bfdfb620e2c3470097ffbe885ab0ea4b7e0e78b1ed1cee2a9",
+    "glbx-mdp3-20251001-20261020.ohlcv-1m.MNQU6-MNQZ6.dbn.zst": "f53306c01d0fac5d579e6fd5189e2f56b1f41385fd32f1775a38a05c40b84c99",
+    "glbx-mdp3-20251001-20261020.ohlcv-1m.MNQU6.dbn.zst": "bb7397cab0cb6ce2dc6e69ce602a68f6902adb240a4163b734d0bc475bbd9977",
+    "glbx-mdp3-20251001-20261020.ohlcv-1m.MNQU7.dbn.zst": "4283b867b2c1c7d5949e504ca811e66cd34e77a9b1ce6ef96bc076bd9b9ddf1d",
+    "glbx-mdp3-20251001-20261020.ohlcv-1m.MNQZ5-MNQH6.dbn.zst": "b49232552e22dd3469172dd131049296acbebce99dce86ea863c324527f7aae3",
+    "glbx-mdp3-20251001-20261020.ohlcv-1m.MNQZ5-MNQM6.dbn.zst": "3867a635fff5e9642a564e5907f1fdf869fe12745a7995ee655bf01c5128fef5",
+    "glbx-mdp3-20251001-20261020.ohlcv-1m.MNQZ5-MNQU6.dbn.zst": "2e4eb9bf85d91afcf9fd7ff2399ee0cdfdcbf2a5d7b8179dcb7124ac1b0f1f9b",
+    "glbx-mdp3-20251001-20261020.ohlcv-1m.MNQZ5.dbn.zst": "188a2df6cf0fac90322291a68c5b326adbbf72c5d3417595c2a3eec397b3f6b3",
+    "glbx-mdp3-20251001-20261020.ohlcv-1m.MNQZ6-MNQH7.dbn.zst": "625ea9c66933439080461eb11148aa0afebd4bc76466b34200d827de8eb8ed70",
+    "glbx-mdp3-20251001-20261020.ohlcv-1m.MNQZ6-MNQM7.dbn.zst": "5b312dc90f1d5406365d5caceeebec1384a537e0e6737ee280a64ea572659d80",
+    "glbx-mdp3-20251001-20261020.ohlcv-1m.MNQZ6.dbn.zst": "9703919a8015201382de07603fce02a7407342d0ea692a284911d5cb2c876357"
+  },
+  "layer1_backadjusted_content_hash": "159055aaa2fd877d3f375c811b7c6d142fb74b66155b131c8d3bed47baf89578",
+  "layer2_config_hash": "fa39a59e50755201f3249921087401006a6bc058f1c9e285771f886f1de01dc2",
+  "costs": {
+    "commission_per_side": 0.39,
+    "exchange_fee_per_side": 0.36,
+    "clearing_fee_per_side": 0.19,
+    "entry_slippage_ticks": 0,
+    "target_slippage_ticks": 0,
+    "stop_slippage_ticks": 1,
+    "time_exit_slippage_ticks": 1
+  },
+  "sizing": {
+    "contracts": 1
+  },
+  "holdout_accessed": false,
+  "development_range": [
+    "2022-10-04",
+    "2024-10-18"
+  ],
+  "total_trades": 292892,
+  "ambiguous_trades": 10934,
+  "software": {
+    "python": "3.13.17",
+    "platform": "Linux-6.18.44-fc-v185-x86_64-with-glibc2.39",
+    "pandas": "3.0.5",
+    "numpy": "2.5.3",
+    "pyarrow": "26.0.0",
+    "databento": "0.89.0"
+  },
+  "sharpe_convention": "daily net $ P&L over all development trading dates (0 on no-trade days), annualized sqrt(252); provisional pending return-frequency clarification"
+}

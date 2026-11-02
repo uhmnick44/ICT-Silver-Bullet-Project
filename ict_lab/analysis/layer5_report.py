@@ -46,6 +46,9 @@ def main() -> None:
           f"- Configurations with >= 100 trades (status ok): {len(ok)}; insufficient data: {len(ins)}.",
           f"- Provisional descriptive screen (>= 100 trades, net Sharpe >= 0.5 under the {man['sharpe_convention'].split(';')[0]}, positive net P&L): {len(screen)} configurations. "
           "PROVISIONAL because the return-frequency convention for the 0.5 threshold is unverified.",
+          f"- Of those provisional passers, {int((screen['net_expectancy_r'] > 0).sum())} also have positive net expectancy in R (the primary metric); the others have positive net dollars "
+          "only because planned risk varies per trade. Across all configurations with >= 100 trades, "
+          f"{int((ok['net_expectancy_r'] > 0).sum())} of {len(ok)} have positive net expectancy in R (median {ok['net_expectancy_r'].median():+.3f} R).",
           "- Multiple-testing correction, bootstrap, null models, walk-forward and candidate qualification: NOT RUN (definitions pending, see below). "
           "No configuration is classified beyond 'exploratory' or 'descriptive screen (provisional)'.\n",
           "### Net expectancy (R) distribution across evaluated configurations with >= 100 trades\n",
