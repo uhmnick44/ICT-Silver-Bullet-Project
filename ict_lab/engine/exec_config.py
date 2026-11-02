@@ -11,7 +11,7 @@ from ..features.config import LIQUIDITY_TYPES, LOOKAHEAD_BIAS, VALID_BIAS
 
 LAB_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_L3_CONFIG = LAB_ROOT / "configs" / "layer3_execution.toml"
-STOP_TYPES = ("displacement_candle_extreme", "displacement_swing", "fvg_distal", "fixed_points")
+STOP_TYPES = ("liquidity_sweep_extreme", "displacement_candle_extreme", "displacement_swing", "fvg_distal", "fixed_points")
 HARD_TRADE_CAP = 10          # safety cap for "unlimited" trades per window (Layer 4 §2)
 UNLIMITED = "unlimited"
 # Named liquidity universes (Layer 4 §4). Every member is from the approved Layer 2 universe; no 1m swings exist.

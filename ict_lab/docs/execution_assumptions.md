@@ -44,7 +44,14 @@ lab's deterministic choices where the specification is silent, each exposed in
 - `fvg_distal`: distal FVG boundary ± `buffer_ticks`; `fixed_points`: entry ∓ points. Stops are
   rounded away from the entry onto the tick grid; a non-positive distance rejects the setup
   (`stop_invalid`) — nothing is substituted.
-- `displacement_candle_extreme` (APPROVED, Layer 3 ambiguity resolution 1, used for the baseline):
+- `liquidity_sweep_extreme` (USER-AUTHORIZED MODIFICATION of the original screenshot methodology; used
+  by the three named configurations): long = one tick below the lowest wick of the qualifying sweep
+  event; short = one tick above its highest wick. The sweep event spans the penetration bar through the
+  confirming bar inclusive — exactly the candles Layer 2 used to measure `max_penetration` at
+  confirmation, so only candles available at confirmation are used (`extreme = level ∓ max_penetration`).
+  The reference is frozen on the setup (`stop_ref_price`) and never adjusted; `buffer_ticks` (default 1)
+  is the existing configurable buffer; a non-positive distance rejects the setup.
+- `displacement_candle_extreme` (APPROVED, Layer 3 ambiguity resolution 1, used for the Layer 3 verification baseline):
   long = one tick below the low of the selected bullish displacement candle; short = one tick above the
   high of the selected bearish candle (`buffer_ticks`, default 1). The selected candle is the **latest**
   qualifying direction-matching displacement candle (ratio ≥ `displacement_threshold`) confirmed after
@@ -167,9 +174,11 @@ These are documented implementation decisions of this lab, not verified rules of
   `bsl_ssl_15m`, `swings_only` (alias). A named universe sets both the sweep references and the
   opposing-liquidity target references; the schema rejects any mismatch and any 1m swing type.
 - Named configurations (`configs/strategies/*.toml`, `load_named_config`): `as_taught_5m`,
-  `as_taught_1m`, `as_traded` as specified in the Layer 4 brief. ASSUMPTION: the original exit policy is
-  unspecified; all three use `rth_end`. All three carry `meta.stop_substitution_note`: the original
-  "beyond displacement swing" stop is unresolved, so `displacement_candle_extreme` is a documented
-  substitution, not a replication of the original stop.
+  `as_taught_1m`, `as_traded` as specified in the Layer 4 brief, with the user-authorized stop
+  modification `liquidity_sweep_extreme` (buffer 1 tick) in place of the original, unresolved "beyond
+  displacement swing" stop. Entry (FVG midpoint), each configuration's target rule, sweep confirmation
+  requirements, the `rth_end` exit (16:00 ET bar open with the existing market-exit slippage),
+  roll-spanning exclusion and the approved liquidity references (no 1m swings) are unchanged. Each file
+  carries `meta.stop_substitution_note` stating this.
 - Frequency diagnostics (`analysis/frequency.py`) report signal, order and fill frequency only; the
   module asserts that no P&L, win-rate, Sharpe, profit-factor, expectancy or drawdown column exists.

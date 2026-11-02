@@ -120,3 +120,19 @@ def test_chronological_truncation_consistency(store, cfg):
             "stop_price", "target_price", "exit_ts_utc", "exit_price", "exit_reason", "same_bar_ambiguous"]
     assert len(a) == len(b) > 100
     pd.testing.assert_frame_equal(a[cols], b[cols])
+
+
+def test_liquidity_sweep_extreme_matches_historical_candles(store):
+    """Every named-config trade's stop sits exactly one tick beyond the extreme wick of its sweep event, where the
+    extreme is recomputed here from the raw 1m bars between the penetration bar and the confirming bar."""
+    bars = store.data.bars.set_index("ts_utc")
+    for name in ("as_taught_5m", "as_taught_1m", "as_traded"):
+        tr = run_backtest(load_named_config(name), store)["trades"]
+        assert len(tr) > 0 and (tr["stop_type"] == "liquidity_sweep_extreme").all()
+        for r in tr.itertuples():
+            seg = bars.loc[r.sweep_penetration_ts_utc: r.sweep_confirmation_ts_utc - pd.Timedelta(minutes=1)]
+            assert len(seg) >= 1 and seg.index.max() < r.sweep_confirmation_ts_utc and r.sweep_confirmation_ts_utc <= r.setup_ts_utc
+            if r.direction == "bullish":
+                assert r.stop_ref_price == seg["low"].min() and r.stop_price == seg["low"].min() - 0.25 and r.stop_price < r.entry_price
+            else:
+                assert r.stop_ref_price == seg["high"].max() and r.stop_price == seg["high"].max() + 0.25 and r.stop_price > r.entry_price

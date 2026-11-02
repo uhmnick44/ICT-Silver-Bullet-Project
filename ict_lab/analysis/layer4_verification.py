@@ -21,7 +21,7 @@ NY = "America/New_York"
 def describe(t: pd.Series, cfg) -> list[str]:
     f = lambda x: x.tz_convert(NY).strftime("%H:%M") if pd.notna(x) else "-"
     return [f"- bias {t['bias']}; sweep of {t['level_type']} @ {t['level_price']:.2f}: penetration {f(t['sweep_penetration_ts_utc'])} ET, confirmed {f(t['sweep_confirmation_ts_utc'])}",
-            f"- displacement candle (gate) confirmed {f(t['displacement_confirmation_ts_utc'])} (ratio {t['displacement_ratio']:.2f}); stop reference candle {f(t['stop_ref_displacement_ts_utc'])} extreme {t['stop_ref_price']:.2f}",
+            f"- displacement candle (gate) confirmed {f(t['displacement_confirmation_ts_utc'])} (ratio {t['displacement_ratio']:.2f}); stop reference = sweep extreme wick {t['stop_ref_price']:.2f} (level {t['level_price']:.2f} {'-' if t['direction']=='bullish' else '+'} max penetration)",
             f"- FVG {t['fvg_timeframe']} {t['fvg_lower']:.2f}–{t['fvg_upper']:.2f} confirmed {f(t['fvg_confirmation_ts_utc'])}; setup rank in window {t['setup_rank_in_window']}, trade #{t['trade_in_window']} in window",
             f"- order active {f(t['order_active_ts_utc'])}, limit {t['entry_limit']:.2f}; filled {f(t['entry_fill_ts_utc'])} @ {t['entry_price']:.2f}; stop {t['stop_price']:.2f}; target {t['target_price']:.2f} ({t['target_source']}, fallback={t['target_fallback_used']}); risk {t['planned_risk_points']:.2f} pts, reward {t['planned_reward_r']:.2f}R planned",
             f"- exit {f(t['exit_ts_utc'])} @ {t['exit_price']:.2f} ({t['exit_reason']}); ambiguous={t['same_bar_ambiguous']}; gap_during_trade={t['gap_during_trade']}; contract {t['entry_symbol']} (unadjusted entry {t['entry_price_unadjusted']:.2f})"]
@@ -33,7 +33,7 @@ def main() -> None:
     results = {n: (load_named_config(n), run_backtest(load_named_config(n), store)) for n in NAMED_CONFIGS}
     md = ["# Layer 4 manual verification — named configurations, development period\n",
           "Each reviewed trade shows the chronological feature sequence and surrounding 1-minute bars, and is re-derived by an independent naive replay (`REPLAY OK`). "
-          "Stop mode is the documented substitution `displacement_candle_extreme`. No trade is fabricated; categories absent from the data are reported as such.\n"]
+          "Stop mode is the user-authorized modification `liquidity_sweep_extreme`. No trade is fabricated; categories absent from the data are reported as such.\n"]
     picks: list[tuple[str, str, pd.Series]] = []
     chosen: set[tuple[str, str]] = set()
     def take(cat, name, mask_fn, k=1):

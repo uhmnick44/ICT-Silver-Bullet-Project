@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-10-31T18:28:50.789485+00:00",
+  "generated_utc": "2026-11-02T00:48:41.825591+00:00",
   "purpose": "Layer 4 frequency diagnostics \u2014 research baselines, not recommended strategies; no performance metrics",
   "development_range": [
     "2022-10-03",
@@ -93,16 +93,16 @@
   },
   "configurations": {
     "as_taught_5m": {
-      "execution_config_hash": "6613832e7f7b47ac7238ffb8d2292bf8040022c3ce19e5f3cdc190c416a15d6c",
+      "execution_config_hash": "e2bb5e36b5d7dbd0d08ccb3f13bb471edd4377e538f2ce4b7d18271f6c11702a",
       "description": "ICT Silver Bullet as taught: 5m FVG, 15m swing-structure bias, 15m BSL/SSL liquidity, displacement 1.5 ATR, next opposing liquidity target, 1 trade per window",
-      "stop_substitution_note": "Original methodology: stop beyond the displacement swing. That structural definition is unresolved; displacement_candle_extreme (one tick beyond the latest qualifying displacement candle extreme) is a documented substitution, not a replication of the original stop.",
+      "stop_substitution_note": "USER-AUTHORIZED MODIFICATION of the original screenshot methodology: stop = liquidity_sweep_extreme, one MNQ tick beyond the extreme wick of the qualifying liquidity sweep event (penetration bar through confirming bar, frozen at setup confirmation). The original named configurations placed the stop beyond the displacement swing, whose structural definition is unresolved.",
       "config": {
         "series_id": "mnq_volcross_next_session_backadj_v1",
         "layer2_config": "configs/layer2_features.toml",
         "meta": {
           "name": "as_taught_5m",
           "description": "ICT Silver Bullet as taught: 5m FVG, 15m swing-structure bias, 15m BSL/SSL liquidity, displacement 1.5 ATR, next opposing liquidity target, 1 trade per window",
-          "stop_substitution_note": "Original methodology: stop beyond the displacement swing. That structural definition is unresolved; displacement_candle_extreme (one tick beyond the latest qualifying displacement candle extreme) is a documented substitution, not a replication of the original stop.",
+          "stop_substitution_note": "USER-AUTHORIZED MODIFICATION of the original screenshot methodology: stop = liquidity_sweep_extreme, one MNQ tick beyond the extreme wick of the qualifying liquidity sweep event (penetration bar through confirming bar, frozen at setup confirmation). The original named configurations placed the stop beyond the displacement swing, whose structural definition is unresolved.",
           "research_baseline": true
         },
         "signal": {
@@ -135,7 +135,7 @@
           "round_midpoint": "away_from_proximal"
         },
         "stop": {
-          "type": "displacement_candle_extreme",
+          "type": "liquidity_sweep_extreme",
           "buffer_ticks": 1,
           "fixed_points": 20.0
         },
@@ -170,20 +170,20 @@
           "policy": "flag_and_exclude"
         }
       },
-      "backtest_dir": "/home/user/ICT-Silver-Bullet-Project/ict_lab/runs/backtests/6613832e7f7b",
-      "trades_content_hash": "1ee86fced8ed8923441831fb9c19ced2add1a159dba9f276b32a3d05c6f02510"
+      "backtest_dir": "/home/user/ICT-Silver-Bullet-Project/ict_lab/runs/backtests/e2bb5e36b5d7",
+      "trades_content_hash": "7b7f1f6b4ad29e0b91ed76b6de8a6abdf1a94db9fc5f38c6169adc906df07076"
     },
     "as_taught_1m": {
-      "execution_config_hash": "f4c3323f897c40b43e8afc044bd1a86ec3ab0d90f0759b9742937ce7fc478c06",
+      "execution_config_hash": "e14371c910c94b09f373191458945d44da1e47b2dfb312cf8ea0c036ec717b5d",
       "description": "ICT Silver Bullet as taught with a 1-minute FVG; otherwise identical to as_taught_5m",
-      "stop_substitution_note": "Original methodology: stop beyond the displacement swing. That structural definition is unresolved; displacement_candle_extreme (one tick beyond the latest qualifying displacement candle extreme) is a documented substitution, not a replication of the original stop.",
+      "stop_substitution_note": "USER-AUTHORIZED MODIFICATION of the original screenshot methodology: stop = liquidity_sweep_extreme, one MNQ tick beyond the extreme wick of the qualifying liquidity sweep event (penetration bar through confirming bar, frozen at setup confirmation). The original named configurations placed the stop beyond the displacement swing, whose structural definition is unresolved.",
       "config": {
         "series_id": "mnq_volcross_next_session_backadj_v1",
         "layer2_config": "configs/layer2_features.toml",
         "meta": {
           "name": "as_taught_1m",
           "description": "ICT Silver Bullet as taught with a 1-minute FVG; otherwise identical to as_taught_5m",
-          "stop_substitution_note": "Original methodology: stop beyond the displacement swing. That structural definition is unresolved; displacement_candle_extreme (one tick beyond the latest qualifying displacement candle extreme) is a documented substitution, not a replication of the original stop.",
+          "stop_substitution_note": "USER-AUTHORIZED MODIFICATION of the original screenshot methodology: stop = liquidity_sweep_extreme, one MNQ tick beyond the extreme wick of the qualifying liquidity sweep event (penetration bar through confirming bar, frozen at setup confirmation). The original named configurations placed the stop beyond the displacement swing, whose structural definition is unresolved.",
           "research_baseline": true
         },
         "signal": {
@@ -216,7 +216,7 @@
           "round_midpoint": "away_from_proximal"
         },
         "stop": {
-          "type": "displacement_candle_extreme",
+          "type": "liquidity_sweep_extreme",
           "buffer_ticks": 1,
           "fixed_points": 20.0
         },
@@ -251,20 +251,20 @@
           "policy": "flag_and_exclude"
         }
       },
-      "backtest_dir": "/home/user/ICT-Silver-Bullet-Project/ict_lab/runs/backtests/f4c3323f897c",
-      "trades_content_hash": "6c48fe5668382069e5c25fa5b4e8212c5b8891f98e610d0f3a779fd9d3eee20d"
+      "backtest_dir": "/home/user/ICT-Silver-Bullet-Project/ict_lab/runs/backtests/e14371c910c9",
+      "trades_content_hash": "846abea958c84ceae8433862aa3fb78e4045798f0e5b1bccb9cf100cad2b99e9"
     },
     "as_traded": {
-      "execution_config_hash": "87adccbbe8e9cf9b7a101672cfa1c09498fb535a991ace97ff4d6d539d56840e",
+      "execution_config_hash": "6beb39b0d54d5d1c55f443ef9fad9d1cc4e41c120bbfcebb9e938f4b4fdb69c2",
       "description": "ICT Silver Bullet as traded: 1m FVG, no bias, session refs plus 15m swings, displacement 1.5 ATR, fixed 2R, unlimited trades per window (hard cap 10)",
-      "stop_substitution_note": "Original methodology: stop beyond the displacement swing. That structural definition is unresolved; displacement_candle_extreme (one tick beyond the latest qualifying displacement candle extreme) is a documented substitution, not a replication of the original stop.",
+      "stop_substitution_note": "USER-AUTHORIZED MODIFICATION of the original screenshot methodology: stop = liquidity_sweep_extreme, one MNQ tick beyond the extreme wick of the qualifying liquidity sweep event (penetration bar through confirming bar, frozen at setup confirmation). The original named configurations placed the stop beyond the displacement swing, whose structural definition is unresolved.",
       "config": {
         "series_id": "mnq_volcross_next_session_backadj_v1",
         "layer2_config": "configs/layer2_features.toml",
         "meta": {
           "name": "as_traded",
           "description": "ICT Silver Bullet as traded: 1m FVG, no bias, session refs plus 15m swings, displacement 1.5 ATR, fixed 2R, unlimited trades per window (hard cap 10)",
-          "stop_substitution_note": "Original methodology: stop beyond the displacement swing. That structural definition is unresolved; displacement_candle_extreme (one tick beyond the latest qualifying displacement candle extreme) is a documented substitution, not a replication of the original stop.",
+          "stop_substitution_note": "USER-AUTHORIZED MODIFICATION of the original screenshot methodology: stop = liquidity_sweep_extreme, one MNQ tick beyond the extreme wick of the qualifying liquidity sweep event (penetration bar through confirming bar, frozen at setup confirmation). The original named configurations placed the stop beyond the displacement swing, whose structural definition is unresolved.",
           "research_baseline": true
         },
         "signal": {
@@ -300,7 +300,7 @@
           "round_midpoint": "away_from_proximal"
         },
         "stop": {
-          "type": "displacement_candle_extreme",
+          "type": "liquidity_sweep_extreme",
           "buffer_ticks": 1,
           "fixed_points": 20.0
         },
@@ -338,8 +338,8 @@
           "policy": "flag_and_exclude"
         }
       },
-      "backtest_dir": "/home/user/ICT-Silver-Bullet-Project/ict_lab/runs/backtests/87adccbbe8e9",
-      "trades_content_hash": "1d5ae00c42795b71138a7cf73e9a32c36d6522e5e4e44d5b6ab0eab0af5e9b08"
+      "backtest_dir": "/home/user/ICT-Silver-Bullet-Project/ict_lab/runs/backtests/6beb39b0d54d",
+      "trades_content_hash": "399a7e57b2b34164b2076c14a38b56087511e2f59cfef32271bf1f1e06e5c6af"
     }
   }
 }

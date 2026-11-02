@@ -2,7 +2,7 @@
 [meta]
 name = "as_taught_1m"
 description = "ICT Silver Bullet as taught with a 1-minute FVG; otherwise identical to as_taught_5m"
-stop_substitution_note = "Original methodology: stop beyond the displacement swing. That structural definition is unresolved; displacement_candle_extreme (one tick beyond the latest qualifying displacement candle extreme) is a documented substitution, not a replication of the original stop."
+stop_substitution_note = "USER-AUTHORIZED MODIFICATION of the original screenshot methodology: stop = liquidity_sweep_extreme, one MNQ tick beyond the extreme wick of the qualifying liquidity sweep event (penetration bar through confirming bar, frozen at setup confirmation). The original named configurations placed the stop beyond the displacement swing, whose structural definition is unresolved."
 research_baseline = true
 
 [signal]
@@ -39,8 +39,8 @@ expiry = "window_end"
 round_midpoint = "away_from_proximal"
 
 [stop]
-type = "displacement_candle_extreme"   # DOCUMENTED SUBSTITUTION for the original "beyond displacement swing" (unresolved)
-buffer_ticks = 1
+type = "liquidity_sweep_extreme"       # USER-AUTHORIZED MODIFICATION: one tick beyond the qualifying sweep's extreme wick
+buffer_ticks = 1                       # one MNQ tick beyond the sweep extreme
 fixed_points = 20.0
 
 [exit]

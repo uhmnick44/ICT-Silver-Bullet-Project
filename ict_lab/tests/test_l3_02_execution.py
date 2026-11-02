@@ -254,3 +254,27 @@ def test_displacement_candle_extreme_rejects_without_substitution(sessions, spec
 def test_displacement_swing_still_blocked():
     with pytest.raises(ValueError):
         cfg(stop=StopConfig(type="displacement_swing"))
+
+
+# ----------------------------------------------------------------------------- liquidity_sweep_extreme (user-authorized modification)
+def test_liquidity_sweep_extreme_stop_long_and_short(sessions, spec):
+    from ict_lab.engine.execution import liquidity_sweep_extreme
+    c = cfg(stop=StopConfig(type="liquidity_sweep_extreme", buffer_ticks=1))
+    # long: sellside level 95.0 swept with max penetration 1.5 -> sweep low 93.5 -> stop 93.25; entry 101 -> risk 7.75 -> 2R target 116.5
+    s = make_setup(level_price=95.0); s.sweep_max_penetration_points = 1.5
+    assert liquidity_sweep_extreme(s) == 93.5
+    ohlc = [FLAT] * 12 + [FILL] + [FLAT] * 400
+    tr, _ = simulate(s, arrays(sessions, "2024-05-15 10:00", ohlc), c, spec, None, ts("2024-05-15 16:00"), NOROLL)
+    assert tr["stop_price"] == 93.25 and tr["stop_ref_price"] == 93.5 and tr["planned_risk_points"] == 7.75 and tr["target_price"] == 116.5
+    assert tr["stop_type"] == "liquidity_sweep_extreme" and spec.is_tick_multiple(tr["stop_price"])
+    # short: buyside level 110.0 swept with max penetration 2.25 -> sweep high 112.25 -> stop 112.5; entry 101 (midpoint of 100-102 rounded up)
+    sb = make_setup(direction="bearish", level_price=110.0, level_type="prev_session_high"); sb.sweep_max_penetration_points = 2.25
+    assert liquidity_sweep_extreme(sb) == 112.25
+    st, why = stop_price(sb, 101.0, c, spec)
+    assert st == 112.5 and why == "ok"
+    # buffer is configurable; invalid distance is rejected, not substituted
+    st3, _ = stop_price(s, 101.0, cfg(stop=StopConfig(type="liquidity_sweep_extreme", buffer_ticks=3)), spec)
+    assert st3 == 92.75
+    bad = make_setup(level_price=105.0); bad.sweep_max_penetration_points = 0.25     # sweep low 104.75 above the 101 entry
+    st_bad, why_bad = stop_price(bad, 101.0, c, spec)
+    assert st_bad is None and "stop_invalid" in why_bad

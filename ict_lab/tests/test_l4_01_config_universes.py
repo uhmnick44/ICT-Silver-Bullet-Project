@@ -9,8 +9,9 @@ def test_three_named_configs_load_and_hash_deterministically():
     hashes = {}
     for n in NAMED_CONFIGS:
         c = load_named_config(n); c2 = load_named_config(n)
-        assert c.meta.name == n and c.config_hash == c2.config_hash and "substitution" in c.meta.stop_substitution_note.lower()
-        assert c.stop.type == "displacement_candle_extreme" and c.signal.require_displacement and c.signal.displacement_threshold == 1.5
+        assert c.meta.name == n and c.config_hash == c2.config_hash and "user-authorized modification" in c.meta.stop_substitution_note.lower()
+        assert c.stop.type == "liquidity_sweep_extreme" and c.stop.buffer_ticks == 1 and c.signal.require_displacement and c.signal.displacement_threshold == 1.5
+        assert c.exit.policy == "rth_end" and c.roll.policy == "flag_and_exclude" and "swing_1m" not in c.signal.liquidity_types
         assert c.signal.windows == ("sb_london", "sb_ny_am", "sb_ny_pm") and c.entry.location == "midpoint"
         hashes[n] = c.config_hash
     assert len(set(hashes.values())) == 3

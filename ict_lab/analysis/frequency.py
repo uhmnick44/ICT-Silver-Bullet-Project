@@ -98,7 +98,7 @@ def main() -> None:
     md = ["# Layer 4 frequency report — named configurations (development period only)\n",
           "Research baselines, **not** recommended strategies. Signal frequency (qualifying setups) is reported separately from order submissions and fills. "
           "No profitability or performance metrics are computed in this layer.\n",
-          "Stop substitution: all three configurations use `displacement_candle_extreme` in place of the original, unresolved 'beyond displacement swing' stop.\n",
+          "Stop: user-authorized modification `liquidity_sweep_extreme` (one tick beyond the qualifying sweep's extreme wick) in place of the original, unresolved 'beyond displacement swing' stop.\n",
           f"Development range {man['development_range'][0]} → {man['development_range'][1]} ({fr['development_years'].iloc[0]} years). Ineligible windows (Layer 1 data-quality exclusions, truncated/non-causal sessions) are counted separately from eligible windows without a setup.\n"]
     key = ["config", "scope", "windows_registered", "windows_eligible", "windows_ineligible_excluded", "windows_with_qualifying_setup", "pct_eligible_windows_with_setup",
            "windows_with_filled_trade", "pct_eligible_windows_with_fill", "trading_dates_with_filled_trade", "pct_trading_dates_with_filled_trade",
